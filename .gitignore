@@ -15,3 +15,8 @@ firebase-config.json
 # Sistema
 .DS_Store
 *.log
+
+# Firebase
+firebase-config.json
+backend/config/firebase-service-key.json
+.env
