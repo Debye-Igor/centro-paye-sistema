@@ -1,0 +1,17 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+venv/
+env/
+
+# Firebase
+firebase-config.json
+.env
+
+# VS Code
+.vscode/settings.json
+
+# Sistema
+.DS_Store
+*.log
