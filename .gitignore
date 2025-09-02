@@ -5,9 +5,18 @@ __pycache__/
 venv/
 env/
 
-# Firebase
-firebase-config.json
+# Firebase - TODAS las variantes
+config/firebase.json
+config/firebase-service-key.json
+config/firebase-*.json
+backend/config/firebase.json
+backend/config/firebase-*.json
+firebase-adminsdk-*.json
+
+# Variables de entorno
 .env
+config/.env
+backend/.env
 
 # VS Code
 .vscode/settings.json
@@ -15,8 +24,3 @@ firebase-config.json
 # Sistema
 .DS_Store
 *.log
-
-# Firebase
-firebase-config.json
-backend/config/firebase-service-key.json
-.env
