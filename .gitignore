@@ -18,5 +18,5 @@ firebase-config.json
 
 # Firebase
 firebase-config.json
-backend/config/firebase-service-key.json
+backend/config/firebase_service_key.json
 .env

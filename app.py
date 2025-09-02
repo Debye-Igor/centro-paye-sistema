@@ -19,8 +19,8 @@ def test_firebase():
     """Ruta de prueba para verificar conexión a Firestore"""
     db = firebase_config.get_db()
     try:
-        doc_ref = db.collection("test").document("demo")
-        doc_ref.set({"mensaje": "Hola Centro Paye 🚀"})
+        doc_ref = db.collection("test").document("prueba")
+        doc_ref.set({"mensaje": "Prueba de conexión - Hola Centro Paye 🚀"})
         return "✅ Documento creado en Firestore"
     except Exception as e:
         return f"❌ Error conectando a Firestore: {e}"
