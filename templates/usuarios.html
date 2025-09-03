@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block title %}Usuarios - Centro Paye{% endblock %}
+{% block page_title %}Gestión de Usuarios{% endblock %}
+
+{% block content %}
+<div class="page-actions" style="padding: 1rem 2rem; background: #f8f9fa; display: flex; justify-content: space-between; align-items: center;">
+    <h2>Lista de Usuarios</h2>
+    <a href="{{ url_for('nuevo_usuario') }}" class="btn-primary">Nuevo Usuario</a>
+</div>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+            <div class="alert alert-{{ category }}" style="margin: 1rem 2rem;">{{ message }}</div>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+
+<div class="content">
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Nombre</th>
+                <th>RUT</th>
+                <th>Email</th>
+                <th>Teléfono</th>
+                <th>Apoderado</th>
+                <th>Estado</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for usuario in usuarios %}
+            <tr>
+                <td>{{ usuario.nombre }}</td>
+                <td>{{ usuario.rut }}</td>
+                <td>{{ usuario.email }}</td>
+                <td>{{ usuario.telefono }}</td>
+                <td>{{ usuario.apoderado }}</td>
+                <td>{{ usuario.estado }}</td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="6" class="no-data">No hay usuarios registrados</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

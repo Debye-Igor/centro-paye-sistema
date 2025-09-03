@@ -3,7 +3,6 @@ from firebase_admin import credentials, firestore, auth
 import os
 from dotenv import load_dotenv
 
-# Cargar variables de entorno
 load_dotenv()
 
 class FirebaseConfig:
@@ -39,6 +38,15 @@ class FirebaseConfig:
     def get_auth(self):
         """Obtener cliente de Authentication"""
         return self.auth
+    
+    def verify_token(self, id_token):
+        """Verificar token de Firebase Auth"""
+        try:
+            decoded_token = auth.verify_id_token(id_token)
+            return decoded_token
+        except Exception as e:
+            print(f"Error verificando token: {e}")
+            return None
 
 # Instancia global
 firebase_config = FirebaseConfig()

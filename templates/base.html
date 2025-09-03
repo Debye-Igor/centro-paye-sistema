@@ -7,14 +7,33 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
 </head>
 <body>
-    <nav>
-        <h1>Centro Paye</h1>
-        <!-- Navegación básica -->
-    </nav>
-    
-    <main>
+    {% if session.user_id %}
+        <!-- Layout para usuarios logueados -->
+        <header class="dashboard-header">
+            <h1>{% block page_title %}Centro Paye - Dashboard{% endblock %}</h1>
+            <div class="user-info">
+                <span>Bienvenido: {{ session.user_email }}</span>
+                <a href="{{ url_for('logout') }}" class="btn-logout">Cerrar Sesión</a>
+            </div>
+        </header>
+        
+        <nav class="dashboard-nav">
+            <ul>
+                <li><a href="{{ url_for('dashboard') }}" class="nav-link">Dashboard</a></li>
+                <li><a href="{{ url_for('usuarios') }}" class="nav-link">Usuarios</a></li>
+                <li><a href="#" class="nav-link">Profesionales</a></li>
+                <li><a href="#" class="nav-link">Citas</a></li>
+                <li><a href="#" class="nav-link">Reprogramaciones</a></li>
+            </ul>
+        </nav>
+        
+        <div class="main-content">
+            {% block content %}{% endblock %}
+        </div>
+    {% else %}
+        <!-- Layout para páginas de login -->
         {% block content %}{% endblock %}
-    </main>
+    {% endif %}
     
     <script src="{{ url_for('static', filename='js/app.js') }}"></script>
 </body>
