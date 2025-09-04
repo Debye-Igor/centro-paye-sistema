@@ -28,7 +28,7 @@ def login():
         
         try:
             # API Key de Firebase (la obtienes de Project Settings > General)
-            api_key = os.getenv('FIREBASE_WEB_API_KEY')  # Agregar a .env
+            api_key = os.getenv('FIREBASE_WEB_API_KEY')  
             
             # Endpoint de Firebase Auth REST API
             url = f"https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key={api_key}"

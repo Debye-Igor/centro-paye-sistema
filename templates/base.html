@@ -31,8 +31,8 @@
             {% block content %}{% endblock %}
         </div>
     {% else %}
-        <!-- Layout para páginas de login -->
-        {% block content %}{% endblock %}
+        <!-- Layout simple para login -->
+        {% block login_content %}{% endblock %}
     {% endif %}
     
     <script src="{{ url_for('static', filename='js/app.js') }}"></script>
