@@ -10,7 +10,7 @@ import json
 load_dotenv()
 
 app = Flask(__name__)
-app.secret_key = os.getenv("FLASK_SECRET_KEY", "centro-paye-secret-2024")
+app.secret_key = os.getenv("FLASK_SECRET_KEY", "centro-paye-secret-2025")
 
 @app.route("/")
 def home():
@@ -111,7 +111,7 @@ def nuevo_usuario():
         email = request.form['email']
         telefono = request.form['telefono']
         fecha_nacimiento = request.form['fecha_nacimiento']
-        apoderado = request.form['apoderado']
+        rol = request.form['rol']
         
         # Validaciones básicas
         if not all([nombre, rut, email]):
@@ -127,7 +127,7 @@ def nuevo_usuario():
                 'email': email,
                 'telefono': telefono,
                 'fecha_nacimiento': fecha_nacimiento,
-                'apoderado': apoderado,
+                'rol': rol,
                 'estado': 'activo'
             }
             

@@ -9,14 +9,6 @@
     <a href="{{ url_for('nuevo_usuario') }}" class="btn-primary">Nuevo Usuario</a>
 </div>
 
-{% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
-        {% for category, message in messages %}
-            <div class="alert alert-{{ category }}" style="margin: 1rem 2rem;">{{ message }}</div>
-        {% endfor %}
-    {% endif %}
-{% endwith %}
-
 <div class="content">
     <table class="data-table">
         <thead>
@@ -25,7 +17,7 @@
                 <th>RUT</th>
                 <th>Email</th>
                 <th>Teléfono</th>
-                <th>Apoderado</th>
+                <th>Rol</th>
                 <th>Estado</th>
             </tr>
         </thead>
@@ -36,7 +28,7 @@
                 <td>{{ usuario.rut }}</td>
                 <td>{{ usuario.email }}</td>
                 <td>{{ usuario.telefono }}</td>
-                <td>{{ usuario.apoderado }}</td>
+                <td>{{ usuario.rol }}</td>
                 <td>{{ usuario.estado }}</td>
             </tr>
             {% else %}
