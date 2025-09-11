@@ -443,3 +443,32 @@ body.dashboard-layout {
         font-size: 0.65rem;
     }
 }
+
+
+/* Reprogramación - Simple */
+.cita-programada {
+    position: relative;
+    padding-bottom: 1.5rem;
+}
+
+.cita-acciones {
+    position: absolute;
+    bottom: 2px;
+    left: 2px;
+    right: 2px;
+}
+
+.btn-reprogramar {
+    width: 100%;
+    background: var(--warning-color);
+    color: white;
+    border: none;
+    padding: 2px 4px;
+    border-radius: 3px;
+    font-size: 0.65rem;
+    cursor: pointer;
+}
+
+.btn-reprogramar:hover {
+    background: #e67e22;
+}

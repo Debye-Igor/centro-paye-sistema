@@ -622,6 +622,7 @@ def obtener_citas_semana(fecha_inicio, fecha_fin):
         # Obtener citas del rango de fechas
         citas = citas_ref.where('fecha', '>=', fecha_inicio)\
                          .where('fecha', '<=', fecha_fin)\
+                         .where('estado', '!=', 'pendiente_reprogramacion')\
                          .stream()
         
         citas_dict = {}
@@ -666,6 +667,37 @@ def obtener_citas_semana(fecha_inicio, fecha_fin):
     except Exception as e:
         print(f"Error obteniendo citas: {e}")
         return {}
+
+
+@app.route("/citas/<cita_id>/reprogramar", methods=['POST'])
+def reprogramar_cita(cita_id):
+    """Marcar cita como pendiente de reprogramación"""
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    try:
+        db = firebase_config.get_db()
+        cita_ref = db.collection('citas').document(cita_id)
+        
+        # Verificar que la cita existe
+        if not cita_ref.get().exists:
+            flash('Cita no encontrada', 'error')
+            return redirect(url_for('calendario'))
+        
+        # INNOVACIÓN: Cambiar estado para liberar horario
+        cita_ref.update({
+            'estado': 'pendiente_reprogramacion',
+            'fecha_reprogramacion': datetime.now().isoformat()
+        })
+        
+        flash('Cita marcada para reprogramar. Horario liberado.', 'success')
+        return redirect(url_for('calendario'))
+        
+    except Exception as e:
+        flash(f'Error: {str(e)}', 'error')
+        return redirect(url_for('calendario'))
+
+
 
 if __name__ == "__main__":
     app.run(debug=True)
