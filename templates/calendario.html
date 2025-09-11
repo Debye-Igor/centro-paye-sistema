@@ -56,5 +56,18 @@ function nuevaCita(fecha, hora) {
     // Redirigir al formulario de nueva cita
     window.location.href = `/citas/nueva?fecha=${fecha}&hora=${hora}`;
 }
+
+
+function reprogramarCita(citaId, paciente) {
+    if (confirm(`¿Marcar la cita de "${paciente}" como pendiente de reprogramación?\n\nEsto liberará automáticamente el horario.`)) {
+        // Enviar solicitud para cambiar estado
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/citas/${citaId}/reprogramar`;
+        
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
 </script>
 {% endblock %}
