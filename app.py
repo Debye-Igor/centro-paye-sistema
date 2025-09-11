@@ -5,7 +5,7 @@ from backend.config.firebase_config import firebase_config
 from firebase_admin import auth
 import requests
 import json
-from datetime import datetime, date
+from datetime import datetime, date,timedelta
 
 
 
@@ -14,6 +14,7 @@ load_dotenv()
 
 app = Flask(__name__)
 app.secret_key = os.getenv("FLASK_SECRET_KEY", "centro-paye-secret-2025")
+
 
 @app.route("/")
 def home():
@@ -313,6 +314,220 @@ def eliminar_paciente(paciente_id):
         flash(f'Error al eliminar: {str(e)}', 'error')
     
     return redirect(url_for('pacientes'))
+
+
+@app.route("/servicios")
+def servicios():
+    """Listar servicios"""
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    try:
+        db = firebase_config.get_db()
+        servicios_ref = db.collection('servicios')
+        servicios = []
+        
+        for doc in servicios_ref.stream():
+            servicio_data = doc.to_dict()
+            servicio_data['id'] = doc.id
+            servicios.append(servicio_data)
+        
+        return render_template('servicios.html', servicios=servicios)
+        
+    except Exception as e:
+        flash(f'Error: {str(e)}', 'error')
+        return render_template('servicios.html', servicios=[])
+
+@app.route("/servicios/nuevo", methods=['GET', 'POST'])
+def nuevo_servicio():
+    """Crear nuevo servicio"""
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    if request.method == 'POST':
+        # Campos 
+        nombre = request.form['nombre'].strip()
+        duracion = request.form['duracion'].strip()
+        precio = request.form['precio'].strip()
+        descripcion = request.form['descripcion'].strip()
+        
+        # Validación 
+        if not all([nombre, duracion, precio]):
+            flash('Campos marcados con * son obligatorios', 'error')
+            return render_template('servicio_form.html')
+        
+        try:
+            # Guardar en Firestore
+            db = firebase_config.get_db()
+            servicio_data = {
+                'nombre': nombre,
+                'duracion': int(duracion),
+                'precio': int(precio),
+                'descripcion': descripcion if descripcion else '',
+                'estado': 'activo',
+                'fecha_creacion': datetime.now().isoformat()
+            }
+            
+            db.collection('servicios').add(servicio_data)
+            flash('Servicio creado correctamente', 'success')
+            return redirect(url_for('servicios'))
+            
+        except Exception as e:
+            flash(f'Error: {str(e)}', 'error')
+    
+    return render_template('servicio_form.html')
+
+@app.route("/servicios/<servicio_id>/editar", methods=['GET', 'POST'])
+def editar_servicio(servicio_id):
+    """Editar servicio - MINIMALISTA"""
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    db = firebase_config.get_db()
+    
+    try:
+        # Obtener datos del servicio
+        doc_ref = db.collection('servicios').document(servicio_id)
+        doc = doc_ref.get()
+        
+        if not doc.exists:
+            flash('Servicio no encontrado', 'error')
+            return redirect(url_for('servicios'))
+        
+        servicio = doc.to_dict()
+        servicio['id'] = servicio_id
+        
+        if request.method == 'POST':
+            # Actualizar datos
+            nombre = request.form['nombre'].strip()
+            duracion = request.form['duracion'].strip()
+            precio = request.form['precio'].strip()
+            descripcion = request.form['descripcion'].strip()
+            estado = request.form['estado'].strip()
+            
+            # Validación 
+            if not all([nombre, duracion, precio]):
+                flash('Campos marcados con * son obligatorios', 'error')
+                return render_template('servicio_edit_form.html', servicio=servicio)
+            
+            # Actualizar en Firestore
+            update_data = {
+                'nombre': nombre,
+                'duracion': int(duracion),
+                'precio': int(precio),
+                'descripcion': descripcion if descripcion else '',
+                'estado': estado,
+                'fecha_modificacion': datetime.now().isoformat()
+            }
+            
+            doc_ref.update(update_data)
+            flash('Servicio actualizado correctamente', 'success')
+            return redirect(url_for('servicios'))
+        
+        return render_template('servicio_edit_form.html', servicio=servicio)
+        
+    except Exception as e:
+        flash(f'Error: {str(e)}', 'error')
+        return redirect(url_for('servicios'))
+
+@app.route("/servicios/<servicio_id>/eliminar", methods=['POST'])
+def eliminar_servicio(servicio_id):
+    """Eliminar servicio - MINIMALISTA"""
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    try:
+        db = firebase_config.get_db()
+        doc_ref = db.collection('servicios').document(servicio_id)
+        
+        # Verificar que existe
+        doc = doc_ref.get()
+        if not doc.exists:
+            flash('Servicio no encontrado', 'error')
+        else:
+            # Eliminar
+            doc_ref.delete()
+            flash('Servicio eliminado correctamente', 'success')
+    
+    except Exception as e:
+        flash(f'Error al eliminar: {str(e)}', 'error')
+    
+    return redirect(url_for('servicios'))
+
+
+
+# Calendariov 
+
+def generar_semana_actual():
+    """Genera los días de la semana actual (Lunes a Viernes)"""
+    hoy = datetime.now()
+    inicio_semana = hoy - timedelta(days=hoy.weekday())  # Lunes
+    
+    dias_semana = []
+    for i in range(5):  # Solo días laborables
+        dia = inicio_semana + timedelta(days=i)
+        dias_semana.append({
+            'fecha': dia,
+            'dia_nombre': dia.strftime('%a %d'),  # "Lun 15"
+            'fecha_str': dia.strftime('%Y-%m-%d')  # "2025-01-15"
+        })
+    
+    return dias_semana
+
+def generar_horarios():
+    """Genera horarios de trabajo (9:00 a 18:00)"""
+    horarios = []
+    for hora in range(9, 19):  # 9:00 a 18:00
+        horarios.append(f"{hora:02d}:00")
+    return horarios
+
+def obtener_citas_semana(fecha_inicio, fecha_fin):
+    """Obtiene citas de Firestore para la semana"""
+    try:
+        db = firebase_config.get_db()
+        citas_ref = db.collection('citas')
+        
+        # Por ahora simulamos citas vacías, después conectaremos Firestore
+        citas_dict = {}
+        
+        # Ejemplo de estructura que usaremos:
+        # citas_dict['2025-01-15_09:00'] = {
+        #     'paciente': 'Juan Pérez',
+        #     'servicio': 'Fonoaudiología',
+        #     'profesional': 'Dra. López'
+        # }
+        
+        return citas_dict
+        
+    except Exception as e:
+        print(f"Error obteniendo citas: {e}")
+        return {}
+
+@app.route("/calendario")
+def calendario():
+    """Vista del calendario semanal - MINIMALISTA"""
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    try:
+        # Generar datos del calendario
+        dias = generar_semana_actual()
+        horarios = generar_horarios()
+        
+        # Obtener citas (por ahora vacío)
+        fecha_inicio = dias[0]['fecha_str']
+        fecha_fin = dias[-1]['fecha_str']
+        citas = obtener_citas_semana(fecha_inicio, fecha_fin)
+        
+        return render_template('calendario.html', 
+                             dias=dias, 
+                             horarios=horarios, 
+                             citas=citas)
+    
+    except Exception as e:
+        flash(f'Error: {str(e)}', 'error')
+        return redirect(url_for('dashboard'))
+
 
 if __name__ == "__main__":
     app.run(debug=True)

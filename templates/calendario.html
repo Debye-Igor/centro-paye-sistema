@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block title %}Calendario - Centro Paye{% endblock %}
+{% block page_title %}Calendario de Citas{% endblock %}
+
+{% block content %}
+<div class="content">
+    <!-- Navegación de semana -->
+    <div class="calendario-header">
+        <button class="btn-nav">←</button>
+        <h2>Semana del {{ dias[0].fecha.strftime('%d') }} al {{ dias[4].fecha.strftime('%d de %B %Y') }}</h2>
+        <button class="btn-nav">→</button>
+    </div>
+
+    <!-- Grilla del calendario -->
+    <div class="calendario-container">
+        <table class="calendario-table">
+            <thead>
+                <tr>
+                    <th class="hora-column">Hora</th>
+                    {% for dia in dias %}
+                    <th class="dia-column">{{ dia.dia_nombre }}</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for hora in horarios %}
+                <tr>
+                    <td class="hora-cell">{{ hora }}</td>
+                    {% for dia in dias %}
+                    <td class="cita-cell">
+                        {% set cita_key = dia.fecha_str + '_' + hora %}
+                        {% if citas.get(cita_key) %}
+                            <!-- Hay una cita programada -->
+                            <div class="cita-programada">
+                                <strong>{{ citas[cita_key].paciente }}</strong><br>
+                                <small>{{ citas[cita_key].servicio }}</small>
+                            </div>
+                        {% else %}
+                            <!-- Horario libre -->
+                            <button class="btn-agregar-cita" onclick="nuevaCita('{{ dia.fecha_str }}', '{{ hora }}')">
+                                + Agendar
+                            </button>
+                        {% endif %}
+                    </td>
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+function nuevaCita(fecha, hora) {
+    // Por ahora solo mostramos alert, después implementaremos el formulario
+    alert(`Crear cita para ${fecha} a las ${hora}`);
+}
+</script>
+{% endblock %}

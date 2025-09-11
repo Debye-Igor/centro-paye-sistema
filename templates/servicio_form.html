@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block title %}Nuevo Servicio - Centro Paye{% endblock %}
+{% block page_title %}Nuevo Servicio{% endblock %}
+
+{% block content %}
+<div class="content">
+    <h2>Crear Nuevo Servicio</h2>
+    <br>
+    
+    <form method="POST">
+        <div class="form-group">
+            <label for="nombre">Nombre del Servicio *</label>
+            <input type="text" id="nombre" name="nombre" required placeholder="Ej: Fonoaudiología">
+        </div>
+
+        <div class="form-group">
+            <label for="duracion">Duración (minutos) *</label>
+            <input type="number" id="duracion" name="duracion" required min="15" max="180" value="45">
+        </div>
+
+        <div class="form-group">
+            <label for="precio">Precio *</label>
+            <input type="number" id="precio" name="precio" required min="0" placeholder="30000">
+        </div>
+
+        <div class="form-group">
+            <label for="descripcion">Descripción</label>
+            <textarea id="descripcion" name="descripcion" rows="3" placeholder="Descripción del servicio..."></textarea>
+        </div>
+
+        <button type="submit" class="btn-primary">Crear Servicio</button>
+        <a href="{{ url_for('servicios') }}" class="btn-secondary">Cancelar</a>
+    </form>
+</div>
+{% endblock %}

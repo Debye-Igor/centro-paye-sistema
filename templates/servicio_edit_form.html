@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block title %}Editar Servicio - Centro Paye{% endblock %}
+{% block page_title %}Editar Servicio{% endblock %}
+
+{% block content %}
+<div class="content">
+    <h2>Editar Servicio: {{ servicio.nombre }}</h2>
+    <br>
+
+    <form method="POST">
+        <div class="form-group">
+            <label for="nombre">Nombre del Servicio *</label>
+            <input type="text" id="nombre" name="nombre" value="{{ servicio.nombre }}" required>
+        </div>
+
+        <div class="form-group">
+            <label for="duracion">Duración (minutos) *</label>
+            <input type="number" id="duracion" name="duracion" value="{{ servicio.duracion }}" required min="15" max="180">
+        </div>
+
+        <div class="form-group">
+            <label for="precio">Precio *</label>
+            <input type="number" id="precio" name="precio" value="{{ servicio.precio }}" required min="0">
+        </div>
+
+        <div class="form-group">
+            <label for="descripcion">Descripción</label>
+            <textarea id="descripcion" name="descripcion" rows="3">{{ servicio.descripcion or '' }}</textarea>
+        </div>
+
+        <div class="form-group">
+            <label for="estado">Estado *</label>
+            <select id="estado" name="estado" required>
+                <option value="activo" {{ 'selected' if servicio.estado == 'activo' else '' }}>Activo</option>
+                <option value="inactivo" {{ 'selected' if servicio.estado == 'inactivo' else '' }}>Inactivo</option>
+            </select>
+        </div>
+
+        <button type="submit" class="btn-primary">Guardar Cambios</button>
+        <a href="{{ url_for('servicios') }}" class="btn-secondary">Cancelar</a>
+    </form>
+</div>
+{% endblock %}
