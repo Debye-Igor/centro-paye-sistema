@@ -459,20 +459,32 @@ def eliminar_servicio(servicio_id):
 # Calendariov 
 
 def generar_semana_actual():
-    """Genera los días de la semana actual (Lunes a Viernes)"""
+    """Genera los días de la semana actual (Lunes a dOMINGO)"""
+    
+    # Diccionario simple para días 
+    dias_espanol = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie',"Sab", "Dom"]
+    
     hoy = datetime.now()
     inicio_semana = hoy - timedelta(days=hoy.weekday())  # Lunes
     
     dias_semana = []
-    for i in range(5):  # Solo días laborables
+    for i in range(7):  # Solo días laborables
         dia = inicio_semana + timedelta(days=i)
+        
         dias_semana.append({
             'fecha': dia,
-            'dia_nombre': dia.strftime('%a %d'),  # "Lun 15"
+            'dia_nombre': f"{dias_espanol[i]} {dia.day}",  # "Lun 15", "Mar 16", etc.
             'fecha_str': dia.strftime('%Y-%m-%d')  # "2025-01-15"
         })
     
     return dias_semana
+
+def obtener_mes_espanol(fecha):
+    """Obtiene el nombre del mes en español"""
+    meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+             'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
+    
+    return meses[fecha.month - 1]  # -1 porque los meses van de 1-12, arrays de 0-11
 
 def generar_horarios():
     """Genera horarios de trabajo (9:00 a 18:00)"""
@@ -481,31 +493,11 @@ def generar_horarios():
         horarios.append(f"{hora:02d}:00")
     return horarios
 
-def obtener_citas_semana(fecha_inicio, fecha_fin):
-    """Obtiene citas de Firestore para la semana"""
-    try:
-        db = firebase_config.get_db()
-        citas_ref = db.collection('citas')
-        
-        # Por ahora simulamos citas vacías, después conectaremos Firestore
-        citas_dict = {}
-        
-        # Ejemplo de estructura que usaremos:
-        # citas_dict['2025-01-15_09:00'] = {
-        #     'paciente': 'Juan Pérez',
-        #     'servicio': 'Fonoaudiología',
-        #     'profesional': 'Dra. López'
-        # }
-        
-        return citas_dict
-        
-    except Exception as e:
-        print(f"Error obteniendo citas: {e}")
-        return {}
+
 
 @app.route("/calendario")
 def calendario():
-    """Vista del calendario semanal - MINIMALISTA"""
+    """Vista del calendario semanal - CON MES EN ESPAÑOL"""
     if 'user_id' not in session:
         return redirect(url_for('login'))
     
@@ -519,15 +511,161 @@ def calendario():
         fecha_fin = dias[-1]['fecha_str']
         citas = obtener_citas_semana(fecha_inicio, fecha_fin)
         
+        # Agregar mes en español
+        mes_espanol = obtener_mes_espanol(dias[0]['fecha'])
+        
         return render_template('calendario.html', 
                              dias=dias, 
                              horarios=horarios, 
-                             citas=citas)
+                             citas=citas,
+                             mes_espanol=mes_espanol)  # <- Nuevo parámetro
     
     except Exception as e:
         flash(f'Error: {str(e)}', 'error')
         return redirect(url_for('dashboard'))
 
+
+#Gestión de citas
+
+@app.route("/citas/nueva", methods=['GET', 'POST'])
+def nueva_cita():
+    """Crear nueva cita - MINIMALISTA"""
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    # Obtener fecha y hora de los parámetros GET
+    fecha = request.args.get('fecha') or request.form.get('fecha')
+    hora = request.args.get('hora') or request.form.get('hora')
+    
+    if not fecha or not hora:
+        flash('Fecha y hora son requeridas', 'error')
+        return redirect(url_for('calendario'))
+    
+    if request.method == 'POST':
+        # Obtener datos del formulario
+        paciente_id = request.form['paciente_id'].strip()
+        servicio_id = request.form['servicio_id'].strip()
+        profesional_id = request.form['profesional_id'].strip()
+        observaciones = request.form['observaciones'].strip()
+        
+        # Validación mínima
+        if not all([paciente_id, servicio_id, profesional_id]):
+            flash('Paciente, servicio y profesional son obligatorios', 'error')
+            return render_template('cita_form.html', 
+                                 fecha=fecha, hora=hora, 
+                                 pacientes=[], servicios=[], profesionales=[])
+        
+        try:
+            # Guardar cita en Firestore
+            db = firebase_config.get_db()
+            cita_data = {
+                'fecha': fecha,
+                'hora': hora,
+                'paciente_id': paciente_id,
+                'servicio_id': servicio_id,
+                'profesional_id': profesional_id,
+                'observaciones': observaciones if observaciones else '',
+                'estado': 'programada',
+                'fecha_creacion': datetime.now().isoformat(),
+                'creado_por': session.get('user_id')
+            }
+            
+            db.collection('citas').add(cita_data)
+            flash('Cita agendada correctamente', 'success')
+            return redirect(url_for('calendario'))
+            
+        except Exception as e:
+            flash(f'Error: {str(e)}', 'error')
+    
+    # Obtener datos para los dropdowns
+    try:
+        db = firebase_config.get_db()
+        
+        # Obtener pacientes
+        pacientes = []
+        for doc in db.collection('pacientes').stream():
+            paciente_data = doc.to_dict()
+            paciente_data['id'] = doc.id
+            pacientes.append(paciente_data)
+        
+        # Obtener servicios activos
+        servicios = []
+        for doc in db.collection('servicios').where('estado', '==', 'activo').stream():
+            servicio_data = doc.to_dict()
+            servicio_data['id'] = doc.id
+            servicios.append(servicio_data)
+        
+        # Obtener profesionales (usuarios del sistema con rol profesional)
+        profesionales = []
+        for doc in db.collection('usuarios_sistema').where('rol', '==', 'profesional').stream():
+            profesional_data = doc.to_dict()
+            profesional_data['id'] = doc.id
+            profesionales.append(profesional_data)
+        
+        return render_template('cita_form.html', 
+                             fecha=fecha, hora=hora,
+                             pacientes=pacientes, 
+                             servicios=servicios, 
+                             profesionales=profesionales)
+    
+    except Exception as e:
+        flash(f'Error cargando datos: {str(e)}', 'error')
+        return redirect(url_for('calendario'))
+
+
+def obtener_citas_semana(fecha_inicio, fecha_fin):
+    """Obtiene citas reales de Firestore para la semana"""
+    try:
+        db = firebase_config.get_db()
+        citas_ref = db.collection('citas')
+        
+        # Obtener citas del rango de fechas
+        citas = citas_ref.where('fecha', '>=', fecha_inicio)\
+                         .where('fecha', '<=', fecha_fin)\
+                         .stream()
+        
+        citas_dict = {}
+        
+        for doc in citas:
+            cita_data = doc.to_dict()
+            cita_data['id'] = doc.id
+            
+            # Obtener nombres de paciente, servicio y profesional
+            try:
+                # Obtener paciente
+                paciente_doc = db.collection('pacientes').document(cita_data['paciente_id']).get()
+                paciente_nombre = paciente_doc.to_dict()['nombre_paciente'] if paciente_doc.exists else 'Paciente'
+                
+                # Obtener servicio
+                servicio_doc = db.collection('servicios').document(cita_data['servicio_id']).get()
+                servicio_nombre = servicio_doc.to_dict()['nombre'] if servicio_doc.exists else 'Servicio'
+                
+                # Obtener profesional
+                profesional_doc = db.collection('usuarios_sistema').document(cita_data['profesional_id']).get()
+                profesional_nombre = profesional_doc.to_dict()['nombre'] if profesional_doc.exists else 'Profesional'
+                
+                # Crear clave para el diccionario (fecha_hora)
+                cita_key = f"{cita_data['fecha']}_{cita_data['hora']}"
+                
+                # Agregar al diccionario
+                citas_dict[cita_key] = {
+                    'id': cita_data['id'],
+                    'paciente': paciente_nombre,
+                    'servicio': servicio_nombre,
+                    'profesional': profesional_nombre,
+                    'estado': cita_data.get('estado', 'programada'),
+                    'observaciones': cita_data.get('observaciones', '')
+                }
+                
+            except Exception as e:
+                print(f"Error procesando cita {doc.id}: {e}")
+                continue
+        
+        return citas_dict
+        
+    except Exception as e:
+        print(f"Error obteniendo citas: {e}")
+        return {}
 
 if __name__ == "__main__":
     app.run(debug=True)

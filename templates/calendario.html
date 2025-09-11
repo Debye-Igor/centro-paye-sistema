@@ -8,7 +8,7 @@
     <!-- Navegación de semana -->
     <div class="calendario-header">
         <button class="btn-nav">←</button>
-        <h2>Semana del {{ dias[0].fecha.strftime('%d') }} al {{ dias[4].fecha.strftime('%d de %B %Y') }}</h2>
+        <h2>Semana del {{ dias[0]['fecha'].day }} al {{ dias[6]['fecha'].day }} de {{ mes_espanol }} {{ dias[0]['fecha'].year }}</h2>
         <button class="btn-nav">→</button>
     </div>
 
@@ -53,8 +53,8 @@
 
 <script>
 function nuevaCita(fecha, hora) {
-    // Por ahora solo mostramos alert, después implementaremos el formulario
-    alert(`Crear cita para ${fecha} a las ${hora}`);
+    // Redirigir al formulario de nueva cita
+    window.location.href = `/citas/nueva?fecha=${fecha}&hora=${hora}`;
 }
 </script>
 {% endblock %}

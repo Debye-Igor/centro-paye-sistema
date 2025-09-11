@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block title %}Nueva Cita - Centro Paye{% endblock %}
+{% block page_title %}Nueva Cita{% endblock %}
+
+{% block content %}
+<div class="content">
+    <h2>Agendar Nueva Cita</h2>
+    <p><strong>Fecha:</strong> {{ fecha }} | <strong>Hora:</strong> {{ hora }}</p>
+    <br>
+
+    <form method="POST">
+        <!-- Campos ocultos para fecha y hora -->
+        <input type="hidden" name="fecha" value="{{ fecha }}">
+        <input type="hidden" name="hora" value="{{ hora }}">
+        
+        <div class="form-group">
+            <label for="paciente_id">Paciente *</label>
+            <select id="paciente_id" name="paciente_id" required>
+                <option value="">Seleccionar paciente</option>
+                {% for paciente in pacientes %}
+                <option value="{{ paciente.id }}">{{ paciente.nombre_paciente }} ({{ paciente.nombre_apoderado }})</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="servicio_id">Servicio *</label>
+            <select id="servicio_id" name="servicio_id" required>
+                <option value="">Seleccionar servicio</option>
+                {% for servicio in servicios %}
+                <option value="{{ servicio.id }}">{{ servicio.nombre }} - {{ servicio.duracion }} min - ${{ "{:,}".format(servicio.precio) }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="profesional_id">Profesional *</label>
+            <select id="profesional_id" name="profesional_id" required>
+                <option value="">Seleccionar profesional</option>
+                {% for profesional in profesionales %}
+                <option value="{{ profesional.id }}">{{ profesional.nombre }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="observaciones">Observaciones</label>
+            <textarea id="observaciones" name="observaciones" rows="3" placeholder="Observaciones adicionales..."></textarea>
+        </div>
+
+        <button type="submit" class="btn-primary">Agendar Cita</button>
+        <a href="{{ url_for('calendario') }}" class="btn-secondary">Cancelar</a>
+    </form>
+</div>
+{% endblock %}
