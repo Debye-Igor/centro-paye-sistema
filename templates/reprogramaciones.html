@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block title %}Reprogramaciones - Centro Paye{% endblock %}
+{% block page_title %}Reprogramaciones{% endblock %}
+
+{% block content %}
+<div class="content">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <h2>Citas Pendientes de Reprogramar</h2>
+        <a href="{{ url_for('calendario') }}" class="btn-secondary">Volver al Calendario</a>
+    </div>
+
+    {% if reprogramaciones %}
+        <div style="background: #e3f2fd; padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
+            <p><strong>💡 Innovación:</strong> Estas citas han liberado sus horarios automáticamente. Otros pacientes pueden agendar esos slots mientras decides cuándo reprogramar.</p>
+        </div>
+    {% endif %}
+
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Paciente</th>
+                <th>Fecha Original</th>
+                <th>Hora Original</th>
+                <th>Servicio</th>
+                <th>Profesional</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for reprog in reprogramaciones %}
+            <tr>
+                <td><strong>{{ reprog.paciente }}</strong></td>
+                <td>{{ reprog.fecha_original }}</td>
+                <td>{{ reprog.hora_original }}</td>
+                <td>{{ reprog.servicio }}</td>
+                <td>{{ reprog.profesional }}</td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="5" class="no-data">
+                    🎉 ¡Excelente! No hay citas pendientes de reprogramación
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    {% if reprogramaciones %}
+        <p style="margin-top: 1rem; color: #666; font-size: 0.875rem;">
+            <strong>Para reprogramar:</strong> Ve al calendario y agenda una nueva cita para el mismo paciente.
+        </p>
+    {% endif %}
+</div>
+{% endblock %}

@@ -622,7 +622,6 @@ def obtener_citas_semana(fecha_inicio, fecha_fin):
         # Obtener citas del rango de fechas
         citas = citas_ref.where('fecha', '>=', fecha_inicio)\
                          .where('fecha', '<=', fecha_fin)\
-                         .where('estado', '!=', 'pendiente_reprogramacion')\
                          .stream()
         
         citas_dict = {}
@@ -631,6 +630,8 @@ def obtener_citas_semana(fecha_inicio, fecha_fin):
             cita_data = doc.to_dict()
             cita_data['id'] = doc.id
             
+            if cita_data.get('estado') == 'pendiente_reprogramacion':
+                continue  
             # Obtener nombres de paciente, servicio y profesional
             try:
                 # Obtener paciente
@@ -697,6 +698,51 @@ def reprogramar_cita(cita_id):
         flash(f'Error: {str(e)}', 'error')
         return redirect(url_for('calendario'))
 
+
+@app.route("/reprogramaciones")
+def reprogramaciones():
+    """Ver citas pendientes de reprogramación - Simple"""
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    try:
+        db = firebase_config.get_db()
+        
+        # Obtener solo citas pendientes de reprogramación
+        citas_pendientes = db.collection('citas')\
+                             .where('estado', '==', 'pendiente_reprogramacion')\
+                             .stream()
+        
+        reprogramaciones = []
+        
+        for doc in citas_pendientes:
+            cita = doc.to_dict()
+            cita['id'] = doc.id
+            
+            try:
+                # Obtener nombres (simple)
+                paciente_doc = db.collection('pacientes').document(cita['paciente_id']).get()
+                servicio_doc = db.collection('servicios').document(cita['servicio_id']).get()
+                profesional_doc = db.collection('usuarios_sistema').document(cita['profesional_id']).get()
+                
+                reprogramaciones.append({
+                    'id': cita['id'],
+                    'paciente': paciente_doc.to_dict()['nombre_paciente'] if paciente_doc.exists else 'N/A',
+                    'fecha_original': cita['fecha'],
+                    'hora_original': cita['hora'],
+                    'servicio': servicio_doc.to_dict()['nombre'] if servicio_doc.exists else 'N/A',
+                    'profesional': profesional_doc.to_dict()['nombre'] if profesional_doc.exists else 'N/A'
+                })
+                
+            except Exception as e:
+                print(f"Error procesando: {e}")
+                continue
+        
+        return render_template('reprogramaciones.html', reprogramaciones=reprogramaciones)
+        
+    except Exception as e:
+        flash(f'Error: {str(e)}', 'error')
+        return render_template('reprogramaciones.html', reprogramaciones=[])
 
 
 if __name__ == "__main__":
