@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block title %}Pacientes - Centro Paye{% endblock %}
+{% block page_title %}Pacientes{% endblock %}
+
+{% block content %}
+<div class="content">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <h2>Lista de Pacientes</h2>
+        <a href="{{ url_for('nuevo_paciente') }}" class="btn-primary">Nuevo Paciente</a>
+    </div>
+
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Nombre Paciente</th>
+                <th>Edad</th>
+                <th>Apoderado</th>
+                <th>Teléfono</th>
+                <th>Email</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for paciente in pacientes %}
+            <tr>
+                <td>{{ paciente.nombre_paciente }}</td>
+                <td>{{ paciente.edad }} años</td>
+                <td>{{ paciente.nombre_apoderado }}</td>
+                <td>{{ paciente.telefono }}</td>
+                <td>{{ paciente.email or '-' }}</td>
+                <td>
+                    <a href="{{ url_for('editar_paciente', paciente_id=paciente.id) }}" class="btn-secondary">Editar</a>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="6" class="no-data">No hay pacientes registrados</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

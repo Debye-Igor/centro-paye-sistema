@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block title %}Editar Paciente - Centro Paye{% endblock %}
+{% block page_title %}Editar Paciente{% endblock %}
+
+{% block content %}
+<div class="content">
+    <h2>Editar Paciente: {{ paciente.nombre_paciente }}</h2><br>
+
+    <form method="POST">
+        <div class="form-group">
+            <label for="nombre_paciente">Nombre del Niño/a *</label>
+            <input type="text" id="nombre_paciente" name="nombre_paciente" value="{{ paciente.nombre_paciente }}" required>
+        </div>
+
+        <div class="form-group">
+            <label for="fecha_nacimiento">Fecha de Nacimiento *</label>
+            <input type="date" id="fecha_nacimiento" name="fecha_nacimiento" value="{{ paciente.fecha_nacimiento }}" required>
+        </div>
+
+        <div class="form-group">
+            <label for="nombre_apoderado">Nombre del Apoderado *</label>
+            <input type="text" id="nombre_apoderado" name="nombre_apoderado" value="{{ paciente.nombre_apoderado }}" required>
+        </div>
+
+        <div class="form-group">
+            <label for="telefono">Teléfono *</label>
+            <input type="tel" id="telefono" name="telefono" value="{{ paciente.telefono }}" required>
+        </div>
+
+        <div class="form-group">
+            <label for="email">Email</label>
+            <input type="email" id="email" name="email" value="{{ paciente.email or '' }}">
+        </div>
+
+        <button type="submit" class="btn-primary">Guardar Cambios</button>
+        <a href="{{ url_for('pacientes') }}" class="btn-secondary">Cancelar</a>
+    </form>
+</div>
+{% endblock %}

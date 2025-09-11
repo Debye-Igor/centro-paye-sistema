@@ -1,22 +1,20 @@
 {% extends "base.html" %}
 
 {% block title %}Usuarios - Centro Paye{% endblock %}
-{% block page_title %}Gestión de Usuarios{% endblock %}
+{% block page_title %}Usuarios del Sistema{% endblock %}
 
 {% block content %}
-<div class="page-actions" style="padding: 1rem 2rem; background: #f8f9fa; display: flex; justify-content: space-between; align-items: center;">
-    <h2>Lista de Usuarios</h2>
-    <a href="{{ url_for('nuevo_usuario') }}" class="btn-primary">Nuevo Usuario</a>
-</div>
-
 <div class="content">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <h2>Usuarios del Sistema</h2>
+        <a href="{{ url_for('nuevo_usuario') }}" class="btn-primary">Nuevo Usuario</a>
+    </div>
+
     <table class="data-table">
         <thead>
             <tr>
                 <th>Nombre</th>
-                <th>RUT</th>
                 <th>Email</th>
-                <th>Teléfono</th>
                 <th>Rol</th>
                 <th>Estado</th>
             </tr>
@@ -25,15 +23,13 @@
             {% for usuario in usuarios %}
             <tr>
                 <td>{{ usuario.nombre }}</td>
-                <td>{{ usuario.rut }}</td>
                 <td>{{ usuario.email }}</td>
-                <td>{{ usuario.telefono }}</td>
-                <td>{{ usuario.rol }}</td>
-                <td>{{ usuario.estado }}</td>
+                <td>{{ usuario.rol|title }}</td>
+                <td>{{ usuario.estado|title }}</td>
             </tr>
             {% else %}
             <tr>
-                <td colspan="6" class="no-data">No hay usuarios registrados</td>
+                <td colspan="4" class="no-data">No hay usuarios registrados</td>
             </tr>
             {% endfor %}
         </tbody>
