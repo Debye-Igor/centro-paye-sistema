@@ -236,7 +236,6 @@ def nuevo_paciente():
     return render_template('paciente_form.html')
 
 
-
 @app.route("/pacientes/<paciente_id>/editar", methods=['GET', 'POST'])
 def editar_paciente(paciente_id):
     """Editar paciente - MINIMALISTA"""
@@ -289,6 +288,31 @@ def editar_paciente(paciente_id):
     except Exception as e:
         flash(f'Error: {str(e)}', 'error')
         return redirect(url_for('pacientes'))
+    
+    
+@app.route("/pacientes/<paciente_id>/eliminar", methods=['POST'])
+def eliminar_paciente(paciente_id):
+    """Eliminar paciente - MINIMALISTA"""
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    try:
+        db = firebase_config.get_db()
+        doc_ref = db.collection('pacientes').document(paciente_id)
+        
+        # Verificar que existe
+        doc = doc_ref.get()
+        if not doc.exists:
+            flash('Paciente no encontrado', 'error')
+        else:
+            # Eliminar
+            doc_ref.delete()
+            flash('Paciente eliminado correctamente', 'success')
+    
+    except Exception as e:
+        flash(f'Error al eliminar: {str(e)}', 'error')
+    
+    return redirect(url_for('pacientes'))
 
 if __name__ == "__main__":
     app.run(debug=True)

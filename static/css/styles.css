@@ -173,7 +173,7 @@ body.dashboard-layout {
 }
 
 .btn-secondary {
-    background: #95a5a6;
+    background: #3c4747;
     color: var(--white);
     padding: 0.5rem 1rem;
     border-radius: var(--border-radius);
@@ -184,7 +184,25 @@ body.dashboard-layout {
 }
 
 .btn-secondary:hover {
-    background: #7f8c8d;
+    background: #7f8d8c;
+}
+
+
+/* Botón eliminar */
+.btn-eliminar {
+    background: var(--error-color);
+    color: var(--white);
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: var(--border-radius);
+    font-size: 0.875rem;
+    margin-left: 0.5rem;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.btn-eliminar:hover {
+    background: #c0392b;
 }
 
 .btn-logout {

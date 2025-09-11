@@ -31,7 +31,9 @@
                 <td>{{ paciente.email or '-' }}</td>
                 <td>
                     <a href="{{ url_for('editar_paciente', paciente_id=paciente.id) }}" class="btn-secondary">Editar</a>
+                    <button onclick="eliminarPaciente('{{ paciente.id }}', '{{ paciente.nombre_paciente }}')" class="btn-eliminar">Eliminar</button>
                 </td>
+                
             </tr>
             {% else %}
             <tr>
@@ -41,4 +43,21 @@
         </tbody>
     </table>
 </div>
+
+<script>
+function eliminarPaciente(id, nombre) {
+    if (confirm(`¿Está seguro de eliminar al paciente "${nombre}"?\n\nEsta acción no se puede deshacer.`)) {
+        // Crear formulario invisible para enviar DELETE
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/pacientes/${id}/eliminar`;
+        
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+</script>
+
 {% endblock %}
+
+
