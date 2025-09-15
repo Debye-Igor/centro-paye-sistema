@@ -472,3 +472,18 @@ body.dashboard-layout {
 .btn-reprogramar:hover {
     background: #e67e22;
 }
+
+.btn-eliminar-cita {
+    flex: 1;
+    background: var(--error-color);
+    color: white;
+    border: none;
+    padding: 2px 4px;
+    border-radius: 3px;
+    font-size: 0.65rem;
+    cursor: pointer;
+}
+
+.btn-eliminar-cita:hover {
+    background: #c0392b;
+}

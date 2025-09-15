@@ -38,6 +38,7 @@
                                 <small>{{ citas[cita_key].profesional }}</small>
                                 <div class="cita-acciones">
                                     <button onclick="reprogramarCita('{{ citas[cita_key].id }}', '{{ citas[cita_key].paciente }}')" class="btn-reprogramar">Reprogramar</button>
+                                    <button onclick="eliminarCita('{{ citas[cita_key].id }}', '{{ citas[cita_key].paciente }}')" class="btn-eliminar-cita">Eliminar</button>
                                 </div>
                             </div>
                         {% else %}
@@ -73,5 +74,18 @@ function reprogramarCita(citaId, paciente) {
         form.submit();
     }
 }
+
+function eliminarCita(citaId, paciente) {
+    if (confirm(`¿Eliminar definitivamente la cita de "${paciente}"?\n\nEsta acción no se puede deshacer.`)) {
+        // Enviar solicitud para eliminar
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/citas/${citaId}/eliminar`;
+        
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+
 </script>
 {% endblock %}

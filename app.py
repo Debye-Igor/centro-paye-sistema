@@ -635,8 +635,10 @@ def obtener_citas_semana(fecha_inicio, fecha_fin):
             cita_data = doc.to_dict()
             cita_data['id'] = doc.id
             
-            if cita_data.get('estado') == 'pendiente_reprogramacion':
+            # CORREGIDO: Excluir tanto citas pendientes como reprogramadas
+            if cita_data.get('estado') in ['pendiente_reprogramacion', 'reprogramada']:
                 continue  
+            
             # Obtener nombres de paciente, servicio y profesional
             try:
                 # Obtener paciente
@@ -748,6 +750,184 @@ def reprogramaciones():
     except Exception as e:
         flash(f'Error: {str(e)}', 'error')
         return render_template('reprogramaciones.html', reprogramaciones=[])
+    
+    
+    
+# lÓGICA para reprogramar cita 
+@app.route("/reprogramaciones/<cita_id>/nueva-fecha", methods=['GET', 'POST'])
+def reprogramar_cita_form(cita_id):
+    """Formulario para asignar nueva fecha a cita pendiente de reprogramación"""
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    db = firebase_config.get_db()
+    
+    try:
+        # Obtener la cita pendiente de reprogramación
+        cita_ref = db.collection('citas').document(cita_id)
+        cita_doc = cita_ref.get()
+        
+        if not cita_doc.exists:
+            flash('Cita no encontrada', 'error')
+            return redirect(url_for('reprogramaciones'))
+        
+        cita_data = cita_doc.to_dict()
+        
+        # Verificar que esté en estado pendiente_reprogramacion
+        if cita_data.get('estado') != 'pendiente_reprogramacion':
+            flash('Esta cita no está pendiente de reprogramación', 'error')
+            return redirect(url_for('reprogramaciones'))
+        
+        if request.method == 'POST':
+            # Procesar la reprogramación
+            nueva_fecha = request.form['nueva_fecha'].strip()
+            nueva_hora = request.form['nueva_hora'].strip()
+            profesional_id = request.form['profesional_id'].strip()
+            observaciones = request.form['observaciones'].strip()
+            
+            # Validaciones
+            if not all([nueva_fecha, nueva_hora, profesional_id]):
+                flash('Todos los campos marcados con * son obligatorios', 'error')
+                return redirect(request.url)
+            
+            # Verificar que no haya conflicto de horario
+            conflicto = verificar_conflicto_horario(db, nueva_fecha, nueva_hora, profesional_id)
+            if conflicto:
+                flash('Ya existe una cita en ese horario para el profesional seleccionado', 'error')
+                return redirect(request.url)
+            
+            # Crear la nueva cita
+            nueva_cita_data = {
+                'fecha': nueva_fecha,
+                'hora': nueva_hora,
+                'paciente_id': cita_data['paciente_id'],
+                'servicio_id': cita_data['servicio_id'],
+                'profesional_id': profesional_id,
+                'estado': 'programada',
+                'observaciones': f"Reprogramada desde {cita_data['fecha']} {cita_data['hora']}. {observaciones}",
+                'cita_original_id': cita_id,
+                'fecha_creacion': datetime.now().isoformat(),
+                'reprogramado_por': session.get('user_id')
+            }
+            
+            # Guardar nueva cita
+            db.collection('citas').add(nueva_cita_data)
+            
+            # Actualizar cita original a estado "reprogramada"
+            cita_ref.update({
+                'estado': 'reprogramada',
+                'fecha_reprogramacion_final': datetime.now().isoformat(),
+                'nueva_fecha': nueva_fecha,
+                'nueva_hora': nueva_hora
+            })
+            
+            flash('Cita reprogramada exitosamente', 'success')
+            return redirect(url_for('reprogramaciones'))
+        
+        # GET: Mostrar formulario
+        # Obtener datos para el formulario
+        cita_original = obtener_datos_cita_para_form(db, cita_data)
+        horarios_disponibles = generar_horarios()
+        otros_profesionales = obtener_otros_profesionales(db, cita_data['profesional_id'])
+        
+        # Fecha mínima (hoy) y sugerida (mañana)
+        fecha_minima = datetime.now().strftime('%Y-%m-%d')
+        fecha_sugerida = (datetime.now() + timedelta(days=1)).strftime('%Y-%m-%d')
+        
+        return render_template('reprogramar_form.html',
+                             cita_original=cita_original,
+                             horarios_disponibles=horarios_disponibles,
+                             otros_profesionales=otros_profesionales,
+                             fecha_minima=fecha_minima,
+                             fecha_sugerida=fecha_sugerida)
+    
+    except Exception as e:
+        flash(f'Error: {str(e)}', 'error')
+        return redirect(url_for('reprogramaciones'))
+
+def verificar_conflicto_horario(db, fecha, hora, profesional_id):
+    """Verifica si ya existe una cita en el horario especificado"""
+    try:
+        citas_conflicto = db.collection('citas')\
+                           .where('fecha', '==', fecha)\
+                           .where('hora', '==', hora)\
+                           .where('profesional_id', '==', profesional_id)\
+                           .where('estado', '==', 'programada')\
+                           .limit(1)\
+                           .stream()
+        
+        return len(list(citas_conflicto)) > 0
+    except:
+        return False
+
+def obtener_datos_cita_para_form(db, cita_data):
+    """Obtiene datos completos de la cita para mostrar en el formulario"""
+    try:
+        # Obtener nombres completos
+        paciente_doc = db.collection('pacientes').document(cita_data['paciente_id']).get()
+        servicio_doc = db.collection('servicios').document(cita_data['servicio_id']).get()
+        profesional_doc = db.collection('usuarios_sistema').document(cita_data['profesional_id']).get()
+        
+        return {
+            'id': cita_data.get('id'),
+            'paciente': paciente_doc.to_dict()['nombre_paciente'] if paciente_doc.exists else 'N/A',
+            'fecha_original': cita_data['fecha'],
+            'hora_original': cita_data['hora'],
+            'servicio': servicio_doc.to_dict()['nombre'] if servicio_doc.exists else 'N/A',
+            'profesional': profesional_doc.to_dict()['nombre'] if profesional_doc.exists else 'N/A',
+            'profesional_id': cita_data['profesional_id']
+        }
+    except Exception as e:
+        return {
+            'id': cita_data.get('id'),
+            'paciente': 'Error cargando datos',
+            'fecha_original': cita_data.get('fecha', ''),
+            'hora_original': cita_data.get('hora', ''),
+            'servicio': 'Error',
+            'profesional': 'Error',
+            'profesional_id': cita_data.get('profesional_id', '')
+        }
+
+def obtener_otros_profesionales(db, profesional_actual_id):
+    """Obtiene lista de otros profesionales disponibles"""
+    try:
+        profesionales = []
+        for doc in db.collection('usuarios_sistema').where('rol', '==', 'profesional').stream():
+            profesional_data = doc.to_dict()
+            if doc.id != profesional_actual_id:  # Excluir el profesional actual
+                profesionales.append({
+                    'id': doc.id,
+                    'nombre': profesional_data.get('nombre', 'Sin nombre')
+                })
+        return profesionales
+    except:
+        return []
+
+#Lógica para elimar cita
+
+@app.route("/citas/<cita_id>/eliminar", methods=['POST'])
+def eliminar_cita(cita_id):
+    """Eliminar cita definitivamente"""
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    try:
+        db = firebase_config.get_db()
+        cita_ref = db.collection('citas').document(cita_id)
+        
+        # Verificar que la cita existe
+        cita_doc = cita_ref.get()
+        if not cita_doc.exists:
+            flash('Cita no encontrada', 'error')
+        else:
+            # Eliminar la cita
+            cita_ref.delete()
+            flash('Cita eliminada correctamente', 'success')
+    
+    except Exception as e:
+        flash(f'Error al eliminar: {str(e)}', 'error')
+    
+    return redirect(url_for('calendario'))
 
 
 if __name__ == "__main__":

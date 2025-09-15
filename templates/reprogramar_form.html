@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+
+{% block title %}Reprogramar Cita - Centro Paye{% endblock %}
+{% block page_title %}Reprogramar Cita{% endblock %}
+
+{% block content %}
+<div class="content">
+    <h2>Reprogramar Cita: {{ cita_original.paciente }}</h2>
+    
+    <div style="background: #f8f9fa; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem;">
+        <h3>Información Original:</h3>
+        <p><strong>Paciente:</strong> {{ cita_original.paciente }}</p>
+        <p><strong>Fecha Original:</strong> {{ cita_original.fecha_original }} a las {{ cita_original.hora_original }}</p>
+        <p><strong>Servicio:</strong> {{ cita_original.servicio }}</p>
+        <p><strong>Profesional Original:</strong> {{ cita_original.profesional }}</p>
+    </div>
+
+    <form method="POST">
+        <input type="hidden" name="cita_id" value="{{ cita_original.id }}">
+        
+        <div class="form-group">
+            <label for="nueva_fecha">Nueva Fecha *</label>
+            <input type="date" id="nueva_fecha" name="nueva_fecha" required 
+                   min="{{ fecha_minima }}" value="{{ fecha_sugerida }}">
+        </div>
+
+        <div class="form-group">
+            <label for="nueva_hora">Nueva Hora *</label>
+            <select id="nueva_hora" name="nueva_hora" required>
+                <option value="">Seleccionar hora</option>
+                {% for hora in horarios_disponibles %}
+                <option value="{{ hora }}">{{ hora }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="profesional_id">Profesional *</label>
+            <select id="profesional_id" name="profesional_id" required>
+                <option value="{{ cita_original.profesional_id }}" selected>
+                    {{ cita_original.profesional }} (Mismo profesional)
+                </option>
+                {% for profesional in otros_profesionales %}
+                <option value="{{ profesional.id }}">{{ profesional.nombre }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="observaciones">Observaciones de la Reprogramación</label>
+            <textarea id="observaciones" name="observaciones" rows="3" 
+                      placeholder="Motivo de la reprogramación, cambios, etc..."></textarea>
+        </div>
+
+        <button type="submit" class="btn-primary">Confirmar Reprogramación</button>
+        <a href="{{ url_for('reprogramaciones') }}" class="btn-secondary">Cancelar</a>
+    </form>
+</div>
+
+<style>
+.info-original {
+    background: #e3f2fd;
+    padding: 1rem;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+}
+
+.info-original h3 {
+    margin-bottom: 0.5rem;
+    color: var(--primary-color);
+}
+</style>
+{% endblock %}
