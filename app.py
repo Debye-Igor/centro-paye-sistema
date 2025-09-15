@@ -15,6 +15,11 @@ load_dotenv()
 app = Flask(__name__)
 app.secret_key = os.getenv("FLASK_SECRET_KEY", "centro-paye-secret-2025")
 
+# Configuración prroducción
+if os.getenv('VERCEL_ENV') == 'production':
+    app.config['SESSION_COOKIE_SECURE'] = True
+    app.config['SESSION_COOKIE_HTTPONLY'] = True
+
 
 @app.route("/")
 def home():
@@ -31,7 +36,7 @@ def login():
         password = request.form['password']
         
         try:
-            # API Key de Firebase (la obtienes de Project Settings > General)
+            # API Key de Firebase
             api_key = os.getenv('FIREBASE_WEB_API_KEY')  
             
             # Endpoint de Firebase Auth REST API
@@ -746,4 +751,7 @@ def reprogramaciones():
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    
+    app.run(debug=os.getenv('FLASK_ENV') != 'production')
+    
+app = app
