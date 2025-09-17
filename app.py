@@ -335,6 +335,16 @@ def servicios():
         for doc in servicios_ref.stream():
             servicio_data = doc.to_dict()
             servicio_data['id'] = doc.id
+            
+            # Obtener código de especialidad si existe
+            if 'especialidad_id' in servicio_data:
+                try:
+                    esp_doc = db.collection('especialidades').document(servicio_data['especialidad_id']).get()
+                    if esp_doc.exists:
+                        servicio_data['especialidad_codigo'] = esp_doc.to_dict()['codigo']
+                except:
+                    servicio_data['especialidad_codigo'] = 'Error'
+            
             servicios.append(servicio_data)
         
         return render_template('servicios.html', servicios=servicios)
@@ -352,12 +362,13 @@ def nuevo_servicio():
     if request.method == 'POST':
         # Campos 
         nombre = request.form['nombre'].strip()
+        especialidad_id = request.form['especialidad_id'].strip() 
         duracion = request.form['duracion'].strip()
         precio = request.form['precio'].strip()
         descripcion = request.form['descripcion'].strip()
         
         # Validación 
-        if not all([nombre, duracion, precio]):
+        if not all([nombre, especialidad_id, duracion, precio]):  
             flash('Campos marcados con * son obligatorios', 'error')
             return render_template('servicio_form.html')
         
@@ -366,6 +377,7 @@ def nuevo_servicio():
             db = firebase_config.get_db()
             servicio_data = {
                 'nombre': nombre,
+                'especialidad_id': especialidad_id,  
                 'duracion': int(duracion),
                 'precio': int(precio),
                 'descripcion': descripcion if descripcion else '',
@@ -380,7 +392,18 @@ def nuevo_servicio():
         except Exception as e:
             flash(f'Error: {str(e)}', 'error')
     
-    return render_template('servicio_form.html')
+    # Obtener especialidades para el dropdown
+    try:
+        db = firebase_config.get_db()
+        especialidades = []
+        for doc in db.collection('especialidades').stream():
+            esp_data = doc.to_dict()
+            esp_data['id'] = doc.id
+            especialidades.append(esp_data)
+        
+        return render_template('servicio_form.html', especialidades=especialidades)
+    except:
+        return render_template('servicio_form.html', especialidades=[])
 
 @app.route("/servicios/<servicio_id>/editar", methods=['GET', 'POST'])
 def editar_servicio(servicio_id):
@@ -1020,7 +1043,6 @@ def horarios():
 
 # especialidaes
 
-
 def inicializar_especialidades():
     """Crear especialidades básicas del centro"""
     try:
@@ -1052,12 +1074,7 @@ def inicializar_especialidades():
                 "codigo": "PSI",
                 "estado": "activa"
             },
-            {
-                "nombre": "Evaluación Neurodevelopmental",
-                "descripcion": "Evaluación integral del desarrollo neurológico",
-                "codigo": "EVAL", 
-                "estado": "activa"
-            }
+           
         ]
         
         for especialidad in especialidades_default:
@@ -1090,8 +1107,9 @@ def especialidades():
         return render_template('especialidades.html', especialidades=[])
     
     
+# Inicializar datos base
 inicializar_horarios()
-inicializar_especialidades() 
+inicializar_especialidades()
 
 if __name__ == "__main__":
     
