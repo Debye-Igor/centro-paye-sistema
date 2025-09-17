@@ -6,7 +6,7 @@ from firebase_admin import auth
 import requests
 import json
 from datetime import datetime, date,timedelta
-
+from backend.routes.usuarios import usuarios_bp
 
 
 # Cargar variables de entorno
@@ -14,6 +14,9 @@ load_dotenv()
 
 app = Flask(__name__)
 app.secret_key = os.getenv("FLASK_SECRET_KEY", "centro-paye-secret-2025")
+
+app.register_blueprint(usuarios_bp)
+
 
 # Configuración prroducción
 if os.getenv('VERCEL_ENV') == 'production':
@@ -85,84 +88,7 @@ def logout():
     flash('Sesión cerrada correctamente', 'info')
     return redirect(url_for('login'))
 
-@app.route("/usuarios")
-def usuarios():
-    """Listar usuarios del sistema"""
-    if 'user_id' not in session:
-        return redirect(url_for('login'))
-    
-    try:
-        db = firebase_config.get_db()
-        usuarios_ref = db.collection('usuarios_sistema')
-        usuarios = []
-        
-        for doc in usuarios_ref.stream():
-            usuario_data = doc.to_dict()
-            usuario_data['id'] = doc.id
-            usuarios.append(usuario_data)
-        
-        return render_template('usuarios.html', usuarios=usuarios)
-        
-    except Exception as e:
-        flash(f'Error: {str(e)}', 'error')
-        return render_template('usuarios.html', usuarios=[])
-    
-@app.route("/usuarios/nuevo", methods=['GET', 'POST'])
-def nuevo_usuario():
-    """Crear nuevo usuario del sistema"""
-    if 'user_id' not in session:
-        return redirect(url_for('login'))
-    
-    if request.method == 'POST':
-        # 4 campos 
-        nombre = request.form['nombre'].strip()
-        email = request.form['email'].strip()
-        password = request.form['password'].strip()
-        rol = request.form['rol'].strip()
-        
-        # Validación 
-        if not all([nombre, email, password, rol]):
-            flash('Todos los campos son obligatorios', 'error')
-            return render_template('usuario_form.html')
-        
-        try:
-            # Crear en Firebase Auth
-            api_key = os.getenv('FIREBASE_WEB_API_KEY')
-            url = f"https://identitytoolkit.googleapis.com/v1/accounts:signUp?key={api_key}"
-            
-            payload = {
-                "email": email,
-                "password": password,
-                "returnSecureToken": True
-            }
-            
-            response = requests.post(url, data=json.dumps(payload))
-            result = response.json()
-            
-            if response.status_code == 200:
-                # Guardar en Firestore
-                db = firebase_config.get_db()
-                usuario_data = {
-                    'uid': result['localId'],
-                    'nombre': nombre,
-                    'email': email,
-                    'rol': rol,
-                    'estado': 'activo'
-                }
-                
-                db.collection('usuarios_sistema').add(usuario_data)
-                flash('Usuario creado correctamente', 'success')
-                return redirect(url_for('usuarios'))
-            else:
-                flash('Error creando usuario', 'error')
-                
-        except Exception as e:
-            flash(f'Error: {str(e)}', 'error')
-    
-    return render_template('usuario_form.html')
 
-
-from datetime import datetime, date
 
 def calcular_edad(fecha_nacimiento):
     """Calcular edad en años"""
