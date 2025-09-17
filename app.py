@@ -491,14 +491,6 @@ def obtener_mes_espanol(fecha):
     
     return meses[fecha.month - 1]  # -1 porque los meses van de 1-12, arrays de 0-11
 
-def generar_horarios():
-    """Genera horarios de trabajo (9:00 a 18:00)"""
-    horarios = []
-    for hora in range(9, 19):  # 9:00 a 18:00
-        horarios.append(f"{hora:02d}:00")
-    return horarios
-
-
 
 @app.route("/calendario")
 def calendario():
@@ -928,6 +920,100 @@ def eliminar_cita(cita_id):
         flash(f'Error al eliminar: {str(e)}', 'error')
     
     return redirect(url_for('calendario'))
+
+
+#Horairos
+
+def inicializar_configuracion():
+    """Crear configuración básica de horarios"""
+    try:
+        db = firebase_config.get_db()
+        config_ref = db.collection('configuracion')
+        
+        # Verificar si ya existe configuración
+        existing = config_ref.document('horarios_centro').get()
+        if existing.exists:
+            return
+        
+        # Crear configuración por defecto
+        config_data = {
+            "hora_inicio": "09:00",
+            "hora_termino": "18:00", 
+            "activo": True
+        }
+        
+        config_ref.document('horarios_centro').set(config_data)
+        print("Configuración de horarios inicializada")
+        
+    except Exception as e:
+        print(f"Error inicializando configuración: {e}")
+        
+        
+def generar_horarios():
+    """Genera horarios basados en configuración del centro"""
+    try:
+        db = firebase_config.get_db()
+        config_doc = db.collection('configuracion').document('horarios_centro').get()
+        
+        if config_doc.exists:
+            config = config_doc.to_dict()
+            hora_inicio = int(config['hora_inicio'].split(':')[0])
+            hora_termino = int(config['hora_termino'].split(':')[0])
+        else:
+            hora_inicio, hora_termino = 9, 18
+        
+        horarios = []
+        for hora in range(hora_inicio, hora_termino + 1):
+            horarios.append(f"{hora:02d}:00")
+        
+        return horarios
+        
+    except Exception as e:
+        print(f"Error obteniendo configuración: {e}")
+        return ["09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00"]
+        
+        
+@app.route("/horarios", methods=['GET', 'POST'])
+def horarios():
+    """Configurar horarios del centro"""
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    if request.method == 'POST':
+        hora_inicio = request.form['hora_inicio']
+        hora_termino = request.form['hora_termino']
+        
+        try:
+            db = firebase_config.get_db()
+            config_ref = db.collection('configuracion').document('horarios_centro')
+            
+            config_ref.update({
+                'hora_inicio': hora_inicio,
+                'hora_termino': hora_termino
+            })
+            
+            flash('Horarios actualizados correctamente', 'success')
+            
+        except Exception as e:
+            flash(f'Error: {str(e)}', 'error')
+    
+    # Obtener configuración actual
+    try:
+        db = firebase_config.get_db()
+        config_doc = db.collection('configuracion').document('horarios_centro').get()
+        
+        if config_doc.exists:
+            configuracion = config_doc.to_dict()
+        else:
+            configuracion = {"hora_inicio": "09:00", "hora_termino": "18:00"}
+        
+        return render_template('horarios.html', configuracion=configuracion)
+        
+    except Exception as e:
+        flash(f'Error: {str(e)}', 'error')
+        return render_template('horarios.html', configuracion={"hora_inicio": "09:00", "hora_termino": "18:00"})
+
+
 
 
 if __name__ == "__main__":

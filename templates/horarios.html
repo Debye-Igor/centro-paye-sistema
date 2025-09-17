@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block title %}Horarios - Centro Paye{% endblock %}
+{% block page_title %}Configuración de Horarios{% endblock %}
+
+{% block content %}
+<div class="content">
+    <h2>Horarios de Atención del Centro</h2>
+    <p>Define el rango de horarios disponibles para agendar citas:</p>
+    <br>
+    
+    <form method="POST">
+        <div class="form-group">
+            <label for="hora_inicio">Hora de Inicio</label>
+            <select id="hora_inicio" name="hora_inicio" required>
+                {% for h in range(6, 24) %}
+                    {% set hora = "{:02d}:00".format(h) %}
+                    <option value="{{ hora }}" 
+                            {% if hora == configuracion.hora_inicio %}selected{% endif %}>
+                        {{ hora }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="hora_termino">Hora de Término</label>
+            <select id="hora_termino" name="hora_termino" required>
+                {% for h in range(7, 25) %}
+                    {% set hora = "{:02d}:00".format(h if h < 24 else 0) %}
+                    <option value="{{ hora }}" 
+                            {% if hora == configuracion.hora_termino %}selected{% endif %}>
+                        {{ hora }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <button type="submit" class="btn-primary">Guardar Configuración</button>
+        <a href="{{ url_for('calendario') }}" class="btn-secondary">Ver Calendario</a>
+    </form>
+</div>
+{% endblock %}
