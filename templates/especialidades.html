@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block title %}Especialidades - Centro Paye{% endblock %}
+{% block page_title %}Especialidades{% endblock %}
+
+{% block content %}
+<div class="content">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <h2>Especialidades del Centro</h2>
+    <p>Catálogo de especialidades terapéuticas disponibles:</p>
+    <br>
+
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Código</th>
+                <th>Especialidad</th>
+                <th>Descripción</th>
+                <th>Estado</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for especialidad in especialidades %}
+            <tr>
+                <td><strong>{{ especialidad.codigo }}</strong></td>
+                <td>{{ especialidad.nombre }}</td>
+                <td>{{ especialidad.descripcion or '-' }}</td>
+                <td>{{ especialidad.estado|title }}</td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="4" class="no-data">No hay especialidades registradas</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

@@ -924,14 +924,14 @@ def eliminar_cita(cita_id):
 
 #Horairos
 
-def inicializar_configuracion():
-    """Crear configuración básica de horarios"""
+def inicializar_horarios():
+    """Crear configuración básica de horarios del centro"""
     try:
         db = firebase_config.get_db()
-        config_ref = db.collection('configuracion')
+        horarios_ref = db.collection('horarios')
         
         # Verificar si ya existe configuración
-        existing = config_ref.document('horarios_centro').get()
+        existing = horarios_ref.document('configuracion_centro').get()
         if existing.exists:
             return
         
@@ -939,21 +939,21 @@ def inicializar_configuracion():
         config_data = {
             "hora_inicio": "09:00",
             "hora_termino": "18:00", 
-            "activo": True
+            "activo": True,
+            "fecha_creacion": datetime.now().isoformat()
         }
         
-        config_ref.document('horarios_centro').set(config_data)
+        horarios_ref.document('configuracion_centro').set(config_data)
         print("Configuración de horarios inicializada")
         
     except Exception as e:
-        print(f"Error inicializando configuración: {e}")
-        
-        
+        print(f"Error inicializando horarios: {e}")
+
 def generar_horarios():
     """Genera horarios basados en configuración del centro"""
     try:
         db = firebase_config.get_db()
-        config_doc = db.collection('configuracion').document('horarios_centro').get()
+        config_doc = db.collection('horarios').document('configuracion_centro').get()
         
         if config_doc.exists:
             config = config_doc.to_dict()
@@ -971,8 +971,7 @@ def generar_horarios():
     except Exception as e:
         print(f"Error obteniendo configuración: {e}")
         return ["09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00"]
-        
-        
+
 @app.route("/horarios", methods=['GET', 'POST'])
 def horarios():
     """Configurar horarios del centro"""
@@ -985,12 +984,16 @@ def horarios():
         
         try:
             db = firebase_config.get_db()
-            config_ref = db.collection('configuracion').document('horarios_centro')
+            # Ahora usar colección horarios
+            config_ref = db.collection('horarios').document('configuracion_centro')
             
-            config_ref.update({
+            # Usar set() con merge=True para crear o actualizar
+            config_ref.set({
                 'hora_inicio': hora_inicio,
-                'hora_termino': hora_termino
-            })
+                'hora_termino': hora_termino,
+                'activo': True,
+                'fecha_modificacion': datetime.now().isoformat()
+            }, merge=True)
             
             flash('Horarios actualizados correctamente', 'success')
             
@@ -1000,12 +1003,14 @@ def horarios():
     # Obtener configuración actual
     try:
         db = firebase_config.get_db()
-        config_doc = db.collection('configuracion').document('horarios_centro').get()
+        config_doc = db.collection('horarios').document('configuracion_centro').get()
         
         if config_doc.exists:
             configuracion = config_doc.to_dict()
         else:
+            # Inicializar si no existe
             configuracion = {"hora_inicio": "09:00", "hora_termino": "18:00"}
+            db.collection('horarios').document('configuracion_centro').set(configuracion)
         
         return render_template('horarios.html', configuracion=configuracion)
         
@@ -1013,11 +1018,84 @@ def horarios():
         flash(f'Error: {str(e)}', 'error')
         return render_template('horarios.html', configuracion={"hora_inicio": "09:00", "hora_termino": "18:00"})
 
+# especialidaes
 
 
+def inicializar_especialidades():
+    """Crear especialidades básicas del centro"""
+    try:
+        db = firebase_config.get_db()
+        especialidades_ref = db.collection('especialidades')
+        
+        # Verificar si ya existen
+        existing = list(especialidades_ref.limit(1).stream())
+        if existing:
+            return
+        
+        # Crear especialidades básicas
+        especialidades_default = [
+            {
+                "nombre": "Fonoaudiología Infantil",
+                "descripcion": "Terapia del habla y lenguaje para niños",
+                "codigo": "FONO",
+                "estado": "activa"
+            },
+            {
+                "nombre": "Terapia Ocupacional", 
+                "descripcion": "Desarrollo de habilidades funcionales y sensoriales",
+                "codigo": "TO",
+                "estado": "activa"
+            },
+            {
+                "nombre": "Psicología Infantil",
+                "descripcion": "Apoyo psicológico y emocional para niños", 
+                "codigo": "PSI",
+                "estado": "activa"
+            },
+            {
+                "nombre": "Evaluación Neurodevelopmental",
+                "descripcion": "Evaluación integral del desarrollo neurológico",
+                "codigo": "EVAL", 
+                "estado": "activa"
+            }
+        ]
+        
+        for especialidad in especialidades_default:
+            especialidades_ref.add(especialidad)
+        
+        print("Especialidades inicializadas")
+        
+    except Exception as e:
+        print(f"Error inicializando especialidades: {e}")
+
+@app.route("/especialidades")
+def especialidades():
+    """Listar especialidades - SIMPLE"""
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    try:
+        db = firebase_config.get_db()
+        especialidades = []
+        
+        for doc in db.collection('especialidades').stream():
+            especialidad_data = doc.to_dict()
+            especialidad_data['id'] = doc.id
+            especialidades.append(especialidad_data)
+        
+        return render_template('especialidades.html', especialidades=especialidades)
+        
+    except Exception as e:
+        flash(f'Error: {str(e)}', 'error')
+        return render_template('especialidades.html', especialidades=[])
+    
+    
+inicializar_horarios()
+inicializar_especialidades() 
 
 if __name__ == "__main__":
     
     app.run(debug=os.getenv('FLASK_ENV') != 'production')
     
 app = app
+
