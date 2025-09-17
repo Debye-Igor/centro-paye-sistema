@@ -384,7 +384,7 @@ def nuevo_servicio():
 
 @app.route("/servicios/<servicio_id>/editar", methods=['GET', 'POST'])
 def editar_servicio(servicio_id):
-    """Editar servicio - MINIMALISTA"""
+    """Editar servicio"""
     if 'user_id' not in session:
         return redirect(url_for('login'))
     
@@ -437,7 +437,7 @@ def editar_servicio(servicio_id):
 
 @app.route("/servicios/<servicio_id>/eliminar", methods=['POST'])
 def eliminar_servicio(servicio_id):
-    """Eliminar servicio - MINIMALISTA"""
+    """Eliminar servicio """
     if 'user_id' not in session:
         return redirect(url_for('login'))
     
@@ -635,7 +635,7 @@ def obtener_citas_semana(fecha_inicio, fecha_fin):
             cita_data = doc.to_dict()
             cita_data['id'] = doc.id
             
-            # CORREGIDO: Excluir tanto citas pendientes como reprogramadas
+            #  Excluir tanto citas pendientes como reprogramadas
             if cita_data.get('estado') in ['pendiente_reprogramacion', 'reprogramada']:
                 continue  
             
