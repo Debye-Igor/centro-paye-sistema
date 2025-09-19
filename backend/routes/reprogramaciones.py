@@ -1,9 +1,27 @@
 from flask import Blueprint, render_template, request, redirect, url_for, session, flash
 from backend.config.firebase_config import firebase_config
 from datetime import datetime, timedelta
+from functools import wraps
+
 
 # Bllueprint
 reprogramaciones_bp = Blueprint('reprogramaciones', __name__)
+
+def requiere_administrador(f):
+    """Decorador para rutas de administrador"""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'user_id' not in session:
+            return redirect(url_for('login'))
+        
+        # Importar función de app.py
+        from app import obtener_rol_usuario
+        if obtener_rol_usuario() != 'administrador':
+            flash('No tienes permisos para esta acción', 'error')
+            return redirect(url_for('citas.calendario'))
+        
+        return f(*args, **kwargs)
+    return decorated_function
 
 @reprogramaciones_bp.route("/reprogramaciones")
 

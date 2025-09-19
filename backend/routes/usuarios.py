@@ -12,28 +12,33 @@ from functools import wraps
 usuarios_bp = Blueprint('usuarios', __name__)
 
 def requiere_administrador(f):
+    """Decorador para rutas de administrador"""
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if 'user_id' not in session:
             return redirect(url_for('login'))
         
-        # Obtener rol (función simple)
-        try:
-            from app import obtener_rol_usuario
-            if obtener_rol_usuario() != 'administrador':
-                flash('No tienes permisos para esta acción', 'error')
-                return redirect(url_for('citas.calendario'))
-        except:
-            flash('Error verificando permisos', 'error')
+        # Importar función de app.py
+        from app import obtener_rol_usuario
+        if obtener_rol_usuario() != 'administrador':
+            flash('No tienes permisos para esta acción', 'error')
             return redirect(url_for('citas.calendario'))
         
         return f(*args, **kwargs)
     return decorated_function
 
-# Proteger todas las rutas:
+
+def requiere_login(f):
+    """Decorador básico para login"""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'user_id' not in session:
+            return redirect(url_for('login'))
+        return f(*args, **kwargs)
+    return decorated_function
 
 @usuarios_bp.route("/usuarios")
-@requiere_administrador
+@requiere_login
 
 def usuarios():
     """Listar usuarios del sistema"""
@@ -67,6 +72,7 @@ def usuarios():
         return render_template('usuarios.html', usuarios=[])
 
 @usuarios_bp.route("/usuarios/nuevo", methods=['GET', 'POST'])
+@requiere_login
 def nuevo_usuario():
     """Crear nuevo usuario del sistema"""
     if 'user_id' not in session:
@@ -139,3 +145,4 @@ def nuevo_usuario():
         return render_template('usuario_form.html', especialidades=especialidades)
     except:
         return render_template('usuario_form.html', especialidades=[])
+    

@@ -1,8 +1,35 @@
 from flask import Blueprint, render_template, request, redirect, url_for, session, flash
 from backend.config.firebase_config import firebase_config
 from datetime import datetime, date, timedelta
+from functools import wraps
+
 
 citas_bp = Blueprint('citas', __name__)
+
+def requiere_login(f):
+    """Decorador básico para login"""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'user_id' not in session:
+            return redirect(url_for('login'))
+        return f(*args, **kwargs)
+    return decorated_function
+
+def requiere_administrador(f):
+    """Decorador para rutas de administrador"""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'user_id' not in session:
+            return redirect(url_for('login'))
+        
+        # Importar función de app.py
+        from app import obtener_rol_usuario
+        if obtener_rol_usuario() != 'administrador':
+            flash('No tienes permisos para esta acción', 'error')
+            return redirect(url_for('citas.calendario'))
+        
+        return f(*args, **kwargs)
+    return decorated_function
 
 def generar_semana_actual():
     """Generar los días de la semana actual (Lunes a Domingo)"""
@@ -112,6 +139,7 @@ def obtener_citas_semana(fecha_inicio, fecha_fin):
         return {}
 
 @citas_bp.route("/calendario")
+@requiere_login
 def calendario():
     """Vista del calendario semanal"""
     if 'user_id' not in session:
@@ -141,6 +169,7 @@ def calendario():
         return redirect(url_for('dashboard'))
 
 @citas_bp.route("/citas/nueva", methods=['GET', 'POST'])
+@requiere_login
 def nueva_cita():
     """Crear nueva cita"""
     if 'user_id' not in session:
@@ -226,6 +255,7 @@ def nueva_cita():
         return redirect(url_for('citas.calendario'))
 
 @citas_bp.route("/citas/<cita_id>/reprogramar", methods=['POST'])
+@requiere_login
 def reprogramar_cita(cita_id):
     """Marcar cita como pendiente de reprogramación"""
     if 'user_id' not in session:
@@ -254,6 +284,7 @@ def reprogramar_cita(cita_id):
         return redirect(url_for('citas.calendario'))
 
 @citas_bp.route("/citas/<cita_id>/eliminar", methods=['POST'])
+@requiere_login
 def eliminar_cita(cita_id):
     """Eliminar cita definitivamente"""
     if 'user_id' not in session:
