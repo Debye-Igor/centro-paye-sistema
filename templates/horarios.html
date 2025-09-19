@@ -38,7 +38,7 @@
         
         <button type="submit" class="btn-primary" id="btn-guardar">Guardar Configuración</button>
        
-        <a href="{{ url_for('calendario') }}" class="btn-secondary">Ver Calendario</a>
+        <a href="{{ url_for('citas.calendario') }}" class="btn-secondary">Ver Calendario</a>
     </form><br>
 
     {% with messages = get_flashed_messages(with_categories=true, category_filter=['horarios_success', 'horarios_error']) %}
