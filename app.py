@@ -8,6 +8,7 @@ import json
 from datetime import datetime, date,timedelta
 from backend.routes.usuarios import usuarios_bp
 from backend.routes.pacientes import pacientes_bp
+from backend.routes.servicios import servicios_bp
 
 
 
@@ -19,6 +20,7 @@ app.secret_key = os.getenv("FLASK_SECRET_KEY", "centro-paye-secret-2025")
 
 app.register_blueprint(usuarios_bp)
 app.register_blueprint(pacientes_bp)
+app.register_blueprint(servicios_bp)
 
 
 
@@ -92,169 +94,6 @@ def logout():
     flash('Sesión cerrada correctamente', 'info')
     return redirect(url_for('login'))
     
-
-@app.route("/servicios")
-def servicios():
-    """Listar servicios"""
-    if 'user_id' not in session:
-        return redirect(url_for('login'))
-    
-    try:
-        db = firebase_config.get_db()
-        servicios_ref = db.collection('servicios')
-        servicios = []
-        
-        for doc in servicios_ref.stream():
-            servicio_data = doc.to_dict()
-            servicio_data['id'] = doc.id
-            
-            # Obtener código de especialidad si existe
-            if 'especialidad_id' in servicio_data:
-                try:
-                    esp_doc = db.collection('especialidades').document(servicio_data['especialidad_id']).get()
-                    if esp_doc.exists:
-                        servicio_data['especialidad_codigo'] = esp_doc.to_dict()['codigo']
-                except:
-                    servicio_data['especialidad_codigo'] = 'Error'
-            
-            servicios.append(servicio_data)
-        
-        return render_template('servicios.html', servicios=servicios)
-        
-    except Exception as e:
-        flash(f'Error: {str(e)}', 'error')
-        return render_template('servicios.html', servicios=[])
-
-@app.route("/servicios/nuevo", methods=['GET', 'POST'])
-def nuevo_servicio():
-    """Crear nuevo servicio"""
-    if 'user_id' not in session:
-        return redirect(url_for('login'))
-    
-    if request.method == 'POST':
-        # Campos 
-        nombre = request.form['nombre'].strip()
-        especialidad_id = request.form['especialidad_id'].strip() 
-        duracion = request.form['duracion'].strip()
-        precio = request.form['precio'].strip()
-        descripcion = request.form['descripcion'].strip()
-        
-        # Validación 
-        if not all([nombre, especialidad_id, duracion, precio]):  
-            flash('Campos marcados con * son obligatorios', 'error')
-            return render_template('servicio_form.html')
-        
-        try:
-            # Guardar en Firestore
-            db = firebase_config.get_db()
-            servicio_data = {
-                'nombre': nombre,
-                'especialidad_id': especialidad_id,  
-                'duracion': int(duracion),
-                'precio': int(precio),
-                'descripcion': descripcion if descripcion else '',
-                'estado': 'activo',
-                'fecha_creacion': datetime.now().isoformat()
-            }
-            
-            db.collection('servicios').add(servicio_data)
-            flash('Servicio creado correctamente', 'success')
-            return redirect(url_for('servicios'))
-            
-        except Exception as e:
-            flash(f'Error: {str(e)}', 'error')
-    
-    # Obtener especialidades para el dropdown
-    try:
-        db = firebase_config.get_db()
-        especialidades = []
-        for doc in db.collection('especialidades').stream():
-            esp_data = doc.to_dict()
-            esp_data['id'] = doc.id
-            especialidades.append(esp_data)
-        
-        return render_template('servicio_form.html', especialidades=especialidades)
-    except:
-        return render_template('servicio_form.html', especialidades=[])
-
-@app.route("/servicios/<servicio_id>/editar", methods=['GET', 'POST'])
-def editar_servicio(servicio_id):
-    """Editar servicio"""
-    if 'user_id' not in session:
-        return redirect(url_for('login'))
-    
-    db = firebase_config.get_db()
-    
-    try:
-        # Obtener datos del servicio
-        doc_ref = db.collection('servicios').document(servicio_id)
-        doc = doc_ref.get()
-        
-        if not doc.exists:
-            flash('Servicio no encontrado', 'error')
-            return redirect(url_for('servicios'))
-        
-        servicio = doc.to_dict()
-        servicio['id'] = servicio_id
-        
-        if request.method == 'POST':
-            # Actualizar datos
-            nombre = request.form['nombre'].strip()
-            duracion = request.form['duracion'].strip()
-            precio = request.form['precio'].strip()
-            descripcion = request.form['descripcion'].strip()
-            estado = request.form['estado'].strip()
-            
-            # Validación 
-            if not all([nombre, duracion, precio]):
-                flash('Campos marcados con * son obligatorios', 'error')
-                return render_template('servicio_edit_form.html', servicio=servicio)
-            
-            # Actualizar en Firestore
-            update_data = {
-                'nombre': nombre,
-                'duracion': int(duracion),
-                'precio': int(precio),
-                'descripcion': descripcion if descripcion else '',
-                'estado': estado,
-                'fecha_modificacion': datetime.now().isoformat()
-            }
-            
-            doc_ref.update(update_data)
-            flash('Servicio actualizado correctamente', 'success')
-            return redirect(url_for('servicios'))
-        
-        return render_template('servicio_edit_form.html', servicio=servicio)
-        
-    except Exception as e:
-        flash(f'Error: {str(e)}', 'error')
-        return redirect(url_for('servicios'))
-
-@app.route("/servicios/<servicio_id>/eliminar", methods=['POST'])
-def eliminar_servicio(servicio_id):
-    """Eliminar servicio """
-    if 'user_id' not in session:
-        return redirect(url_for('login'))
-    
-    try:
-        db = firebase_config.get_db()
-        doc_ref = db.collection('servicios').document(servicio_id)
-        
-        # Verificar que existe
-        doc = doc_ref.get()
-        if not doc.exists:
-            flash('Servicio no encontrado', 'error')
-        else:
-            # Eliminar
-            doc_ref.delete()
-            flash('Servicio eliminado correctamente', 'success')
-    
-    except Exception as e:
-        flash(f'Error al eliminar: {str(e)}', 'error')
-    
-    return redirect(url_for('servicios'))
-
-
 
 # Calendariov 
 
@@ -611,7 +450,7 @@ def reprogramar_cita_form(cita_id):
             flash('Cita reprogramada exitosamente', 'success')
             return redirect(url_for('reprogramaciones'))
         
-        # GET: Mostrar formulario
+        # Mostrar formulario
         # Obtener datos para el formulario
         cita_original = obtener_datos_cita_para_form(db, cita_data)
         horarios_disponibles = generar_horarios()

@@ -7,7 +7,8 @@
 <div class="content">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
         <h2>Lista de Servicios</h2>
-        <a href="{{ url_for('nuevo_servicio') }}" class="btn-primary">Nuevo Servicio</a>
+        <a href="{{ url_for('servicios.nuevo_servicio') }}" class="btn-primary">Nuevo Servicio</a>
+
     </div>
 
     <table class="data-table">
@@ -30,7 +31,7 @@
                 <td>${{ "{:,}".format(servicio.precio) }}</td>
                 <td>{{ servicio.estado|title }}</td>
                 <td>
-                    <a href="{{ url_for('editar_servicio', servicio_id=servicio.id) }}" class="btn-secondary">Editar</a>
+                <a href="{{ url_for('servicios.editar_servicio', servicio_id=servicio.id) }}" class="btn-secondary">Editar</a>
                     <button onclick="eliminarServicio('{{ servicio.id }}', '{{ servicio.nombre }}')" class="btn-eliminar">Eliminar</button>
                 </td>
             </tr>
