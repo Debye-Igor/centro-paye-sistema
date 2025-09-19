@@ -1,43 +1,48 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Centro Paye - Sistema de Citas{% endblock %}</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
 </head>
+
 <body>
     {% if session.user_id %}
-        <!-- Layout para usuarios logueados -->
-        <header class="dashboard-header">
-            <h1>{% block page_title %}Centro Paye - Dashboard{% endblock %}</h1>
-            <div class="user-info">
-                <span>Bienvenido: {{ session.user_email }}</span>
-                <a href="{{ url_for('logout') }}" class="btn-logout">Cerrar Sesión</a>
-            </div>
-        </header>
-        
-        <nav class="dashboard-nav">
-            <ul>
-                <li><a href="{{ url_for('dashboard') }}" class="nav-link">Dashboard</a></li>
-                <li><a href="{{ url_for('citas.calendario') }}" class="nav-link">Calendario</a></li>
-                <li><a href="{{ url_for('usuarios.usuarios') }}" class="nav-link">Usuarios</a></li>
-                <li><a href="{{ url_for('pacientes.pacientes') }}" class="nav-link">Pacientes</a></li>
-                <li><a href="{{ url_for('servicios.servicios') }}" class="nav-link">Servicios</a></li>
-                <li><a href="{{ url_for('horarios') }}" class="nav-link">Horarios</a></li>  
-                <li><a href="{{ url_for('especialidades') }}" class="nav-link">Especialidades</a></li>
-                <li><a href="{{ url_for('reprogramaciones.reprogramaciones') }}" class="nav-link">Reprogramaciones</a></li>
-            </ul>
-        </nav>
-        
-        <div class="main-content">
-            {% block content %}{% endblock %}
+    <!-- Layout para usuarios logueados -->
+    <header class="dashboard-header">
+        <h1>{% block page_title %}Centro Paye - Dashboard{% endblock %}</h1>
+        <div class="user-info">
+            <span>Bienvenido: {{ session.user_email }}</span>
+            <a href="{{ url_for('logout') }}" class="btn-logout">Cerrar Sesión</a>
         </div>
+    </header>
+
+    <nav class="dashboard-nav">
+        <ul>
+            <li><a href="{{ url_for('dashboard') }}" class="nav-link">Dashboard</a></li>
+            <li><a href="{{ url_for('citas.calendario') }}" class="nav-link">Calendario</a></li>
+            {% if user_role == 'administrador' %}
+            <li><a href="{{ url_for('usuarios.usuarios') }}" class="nav-link">Usuarios</a></li>
+            <li><a href="{{ url_for('pacientes.pacientes') }}" class="nav-link">Pacientes</a></li>
+            <li><a href="{{ url_for('servicios.servicios') }}" class="nav-link">Servicios</a></li>
+            <li><a href="{{ url_for('horarios') }}" class="nav-link">Horarios</a></li>
+            <li><a href="{{ url_for('especialidades') }}" class="nav-link">Especialidades</a></li>
+            <li><a href="{{ url_for('reprogramaciones.reprogramaciones') }}" class="nav-link">Reprogramaciones</a></li>
+            {% endif %}
+        </ul>
+    </nav>
+
+    <div class="main-content">
+        {% block content %}{% endblock %}
+    </div>
     {% else %}
-        <!-- Layout simple para login -->
-        {% block login_content %}{% endblock %}
+    <!-- Layout simple para login -->
+    {% block login_content %}{% endblock %}
     {% endif %}
-    
+
     <script src="{{ url_for('static', filename='js/app.js') }}"></script>
 </body>
+
 </html>

@@ -15,6 +15,8 @@ def calcular_edad(fecha_nacimiento):
     return edad
 
 @pacientes_bp.route("/pacientes")
+@requiere_administrador
+
 def pacientes():
     """Listar pacientes"""
     if 'user_id' not in session:
@@ -42,6 +44,8 @@ def pacientes():
         return render_template('pacientes.html', pacientes=[])
 
 @pacientes_bp.route("/pacientes/nuevo", methods=['GET', 'POST'])
+@requiere_administrador
+
 def nuevo_paciente():
     """Crear nuevo paciente"""
     if 'user_id' not in session:
@@ -80,6 +84,8 @@ def nuevo_paciente():
     return render_template('paciente_form.html')
 
 @pacientes_bp.route("/pacientes/<paciente_id>/editar", methods=['GET', 'POST'])
+@requiere_administrador
+
 def editar_paciente(paciente_id):
     """Editar paciente"""
     if 'user_id' not in session:
@@ -129,6 +135,8 @@ def editar_paciente(paciente_id):
         return redirect(url_for('pacientes.pacientes'))
 
 @pacientes_bp.route("/pacientes/<paciente_id>/eliminar", methods=['POST'])
+@requiere_administrador
+
 def eliminar_paciente(paciente_id):
     """Eliminar paciente"""
     if 'user_id' not in session:

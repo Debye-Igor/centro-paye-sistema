@@ -12,6 +12,9 @@ from backend.routes.servicios import servicios_bp
 from backend.routes.citas import citas_bp
 from backend.routes.reprogramaciones import reprogramaciones_bp
 
+from functools import wraps
+
+
 
 # Cargar variables de entorno
 load_dotenv()
@@ -30,6 +33,53 @@ app.register_blueprint(reprogramaciones_bp)
 if os.getenv('VERCEL_ENV') == 'production':
     app.config['SESSION_COOKIE_SECURE'] = True
     app.config['SESSION_COOKIE_HTTPONLY'] = True
+    
+    
+from functools import wraps
+
+def obtener_rol_usuario():
+    """Obtiene el rol del usuario actual"""
+    if 'user_id' not in session:
+        return None
+    
+    try:
+        db = firebase_config.get_db()
+        # Buscar usuario por UID de Firebase
+        usuarios_ref = db.collection('usuarios_sistema')
+        usuarios = usuarios_ref.where('uid', '==', session['user_id']).limit(1).stream()
+        
+        for doc in usuarios:
+            usuario_data = doc.to_dict()
+            return usuario_data.get('rol', 'profesional')  # Default profesional
+        
+        return 'profesional'  # Si no encuentra, default profesional
+    except:
+        return 'profesional'
+
+def requiere_rol(rol_requerido):
+    """Decorador para verificar roles específicos"""
+    def decorator(f):
+        @wraps(f)
+        def decorated_function(*args, **kwargs):
+            if 'user_id' not in session:
+                return redirect(url_for('login'))
+            
+            rol_actual = obtener_rol_usuario()
+            
+            if rol_requerido == 'administrador' and rol_actual != 'administrador':
+                flash('No tienes permisos para acceder a esta sección', 'error')
+                return redirect(url_for('citas.calendario'))
+            
+            return f(*args, **kwargs)
+        return decorated_function
+    return decorator
+
+@app.context_processor
+def inject_user_role():
+    """Inyecta el rol del usuario en todos los templates"""
+    return {
+        'user_role': obtener_rol_usuario() if 'user_id' in session else None
+    }
 
 @app.route("/")
 def home():
@@ -147,6 +197,7 @@ def generar_horarios():
         return ["09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00"]
 
 @app.route("/horarios", methods=['GET', 'POST'])
+@requiere_rol('administrador')
 def horarios():
     """Configurar horarios del centro"""
     if 'user_id' not in session:
@@ -240,6 +291,7 @@ def inicializar_especialidades():
         print(f"Error inicializando especialidades: {e}")
 
 @app.route("/especialidades")
+@requiere_rol('administrador')
 def especialidades():
     """Listar especialidades - SIMPLE"""
     if 'user_id' not in session:

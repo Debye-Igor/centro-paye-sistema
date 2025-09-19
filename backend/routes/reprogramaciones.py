@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 reprogramaciones_bp = Blueprint('reprogramaciones', __name__)
 
 @reprogramaciones_bp.route("/reprogramaciones")
+
 def reprogramaciones():
     """Ver citas pendientes de reprogramación - Simple"""
     if 'user_id' not in session:
@@ -51,6 +52,7 @@ def reprogramaciones():
         return render_template('reprogramaciones.html', reprogramaciones=[])
 
 @reprogramaciones_bp.route("/reprogramaciones/<cita_id>/nueva-fecha", methods=['GET', 'POST'])
+
 def reprogramar_cita_form(cita_id):
     """Formulario para asignar nueva fecha a cita pendiente de reprogramación"""
     if 'user_id' not in session:

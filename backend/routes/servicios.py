@@ -6,6 +6,7 @@ from datetime import datetime
 servicios_bp = Blueprint('servicios', __name__)
 
 @servicios_bp.route("/servicios")
+@requiere_administrador
 def servicios():
     """Listar servicios"""
     if 'user_id' not in session:
@@ -38,6 +39,7 @@ def servicios():
         return render_template('servicios.html', servicios=[])
 
 @servicios_bp.route("/servicios/nuevo", methods=['GET', 'POST'])
+@requiere_administrador
 def nuevo_servicio():
     """Crear nuevo servicio"""
     if 'user_id' not in session:
@@ -78,6 +80,7 @@ def nuevo_servicio():
     return render_template('servicio_form.html', especialidades=especialidades)
 
 @servicios_bp.route("/servicios/<servicio_id>/editar", methods=['GET', 'POST'])
+@requiere_administrador
 def editar_servicio(servicio_id):
     """Editar servicio"""
     if 'user_id' not in session:
@@ -131,6 +134,7 @@ def editar_servicio(servicio_id):
         return redirect(url_for('servicios.servicios'))
 
 @servicios_bp.route("/servicios/<servicio_id>/eliminar", methods=['POST'])
+@requiere_administrador
 def eliminar_servicio(servicio_id):
     """Eliminar servicio"""
     if 'user_id' not in session:

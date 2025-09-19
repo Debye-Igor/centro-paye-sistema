@@ -5,10 +5,36 @@ import requests
 import json
 import os
 
+from functools import wraps
+
+
 # Crear Blueprint
 usuarios_bp = Blueprint('usuarios', __name__)
 
+def requiere_administrador(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'user_id' not in session:
+            return redirect(url_for('login'))
+        
+        # Obtener rol (función simple)
+        try:
+            from app import obtener_rol_usuario
+            if obtener_rol_usuario() != 'administrador':
+                flash('No tienes permisos para esta acción', 'error')
+                return redirect(url_for('citas.calendario'))
+        except:
+            flash('Error verificando permisos', 'error')
+            return redirect(url_for('citas.calendario'))
+        
+        return f(*args, **kwargs)
+    return decorated_function
+
+# Proteger todas las rutas:
+
 @usuarios_bp.route("/usuarios")
+@requiere_administrador
+
 def usuarios():
     """Listar usuarios del sistema"""
     if 'user_id' not in session:
