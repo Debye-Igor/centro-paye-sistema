@@ -5,14 +5,7 @@
 
 {% block content %}
 <div class="content">
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            {% for category, message in messages %}
-                <div class="alert alert-{{ category }}">{{ message }}</div>
-            {% endfor %}
-        {% endif %}
-    {% endwith %}
-
+    
     <h2>Especialidades del Centro</h2>
     <p>Catálogo de especialidades terapéuticas disponibles:</p>
     <br>

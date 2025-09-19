@@ -36,19 +36,38 @@
             </select>
         </div>
         
-        <button type="submit" class="btn-primary" onclick="mostrarMensaje()">Guardar Configuración</button>
+        <button type="submit" class="btn-primary" id="btn-guardar">Guardar Configuración</button>
        
         <a href="{{ url_for('calendario') }}" class="btn-secondary">Ver Calendario</a>
     </form><br>
-    {% with messages = get_flashed_messages(with_categories=true) %}
+
+    {% with messages = get_flashed_messages(with_categories=true, category_filter=['horarios_success', 'horarios_error']) %}
         {% if messages %}
             {% for category, message in messages %}
-                <div class="alert alert-{{ category }}">{{ message }}</div>
+                <div class="alert alert-{{ 'success' if 'success' in category else 'error' }}">{{ message }}</div>
             {% endfor %}
         {% endif %}
     {% endwith %}
 
 </div>
+
+<script>
+document.getElementById('horarios-form').addEventListener('submit', function(e) {
+    const btn = document.getElementById('btn-guardar');
+    
+    // Mejorar UX durante envío
+    btn.textContent = 'Guardando...';
+    btn.disabled = true;
+    btn.style.opacity = '0.7';
+    
+    // Si hay error, restaurar botón
+    setTimeout(() => {
+        btn.textContent = 'Guardar Configuración';
+        btn.disabled = false;
+        btn.style.opacity = '1';
+    }, 5000);
+});
+</script>
 
 {% endblock %}
 

@@ -779,7 +779,7 @@ def horarios():
         
         try:
             db = firebase_config.get_db()
-            # Ahora usar colección horarios
+            # ccolección horarios
             config_ref = db.collection('horarios').document('configuracion_centro')
             
             # Usar set() con merge=True para crear o actualizar
@@ -790,7 +790,10 @@ def horarios():
                 'fecha_modificacion': datetime.now().isoformat()
             }, merge=True)
             
-            flash('Horarios actualizados correctamente', 'success')
+            flash('Horarios actualizados correctamente', 'horarios_success')
+            return redirect(url_for('horarios'))
+
+            # flash('Horarios actualizados correctamente', 'success')
             
         except Exception as e:
             flash(f'Error: {str(e)}', 'error')
