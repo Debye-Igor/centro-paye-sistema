@@ -36,8 +36,7 @@
                 <td>{{ reprog.servicio }}</td>
                 <td>{{ reprog.profesional }}</td>
                 <td>
-                    <a href="{{ url_for('reprogramar_cita_form', cita_id=reprog.id) }}" 
-                       class="btn-primary">Asignar Nueva Fecha</a>
+                    <a href="{{ url_for('reprogramaciones.reprogramar_cita_form', cita_id=reprog.id) }}" class="btn-primary">Asignar Nueva Fecha</a>
                 </td>
             </tr>
             {% else %}
