@@ -7,7 +7,7 @@
 <div class="content">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
         <h2>Lista de Pacientes</h2>
-        <a href="{{ url_for('nuevo_paciente') }}" class="btn-primary">Nuevo Paciente</a>
+        <a href="{{ url_for('pacientes.nuevo_paciente') }}" class="btn-primary">Nuevo Paciente</a>
     </div>
 
     <table class="data-table">
@@ -30,7 +30,7 @@
                 <td>{{ paciente.telefono }}</td>
                 <td>{{ paciente.email or '-' }}</td>
                 <td>
-                    <a href="{{ url_for('editar_paciente', paciente_id=paciente.id) }}" class="btn-secondary">Editar</a>
+                    <a href="{{ url_for('pacientes.editar_paciente', paciente_id=paciente.id) }}" class="btn-secondary">Editar</a>
                     <button onclick="eliminarPaciente('{{ paciente.id }}', '{{ paciente.nombre_paciente }}')" class="btn-eliminar">Eliminar</button>
                 </td>
                 

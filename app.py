@@ -7,6 +7,8 @@ import requests
 import json
 from datetime import datetime, date,timedelta
 from backend.routes.usuarios import usuarios_bp
+from backend.routes.pacientes import pacientes_bp
+
 
 
 # Cargar variables de entorno
@@ -16,6 +18,8 @@ app = Flask(__name__)
 app.secret_key = os.getenv("FLASK_SECRET_KEY", "centro-paye-secret-2025")
 
 app.register_blueprint(usuarios_bp)
+app.register_blueprint(pacientes_bp)
+
 
 
 # Configuración prroducción
@@ -87,165 +91,7 @@ def logout():
     session.clear()
     flash('Sesión cerrada correctamente', 'info')
     return redirect(url_for('login'))
-
-
-
-def calcular_edad(fecha_nacimiento):
-    """Calcular edad en años"""
-    hoy = date.today()
-    nacimiento = datetime.strptime(fecha_nacimiento, '%Y-%m-%d').date()
-    edad = hoy.year - nacimiento.year
-    if hoy.month < nacimiento.month or (hoy.month == nacimiento.month and hoy.day < nacimiento.day):
-        edad -= 1
-    return edad
-
-@app.route("/pacientes")
-def pacientes():
-    """Listar pacientes"""
-    if 'user_id' not in session:
-        return redirect(url_for('login'))
     
-    try:
-        db = firebase_config.get_db()
-        pacientes_ref = db.collection('pacientes')
-        pacientes = []
-        
-        for doc in pacientes_ref.stream():
-            paciente_data = doc.to_dict()
-            paciente_data['id'] = doc.id
-            
-            # Calcular edad
-            if 'fecha_nacimiento' in paciente_data:
-                paciente_data['edad'] = calcular_edad(paciente_data['fecha_nacimiento'])
-            
-            pacientes.append(paciente_data)
-        
-        return render_template('pacientes.html', pacientes=pacientes)
-        
-    except Exception as e:
-        flash(f'Error: {str(e)}', 'error')
-        return render_template('pacientes.html', pacientes=[])
-
-@app.route("/pacientes/nuevo", methods=['GET', 'POST'])
-def nuevo_paciente():
-    """Crear nuevo paciente"""
-    if 'user_id' not in session:
-        return redirect(url_for('login'))
-    
-    if request.method == 'POST':
-        # Campos esenciales
-        nombre_paciente = request.form['nombre_paciente'].strip()
-        fecha_nacimiento = request.form['fecha_nacimiento'].strip()
-        nombre_apoderado = request.form['nombre_apoderado'].strip()
-        telefono = request.form['telefono'].strip()
-        email = request.form['email'].strip()
-        
-        # Validación 
-        if not all([nombre_paciente, fecha_nacimiento, nombre_apoderado,]):
-            flash('Campos marcados con * son obligatorios', 'error')
-            return render_template('paciente_form.html')
-        
-        try:
-            # Guardar en Firestore
-            db = firebase_config.get_db()
-            paciente_data = {
-                'nombre_paciente': nombre_paciente,
-                'fecha_nacimiento': fecha_nacimiento,
-                'nombre_apoderado': nombre_apoderado,
-                'telefono': telefono,
-                'email': email if email else '',
-                'estado': 'activo',
-                'fecha_registro': datetime.now().isoformat()
-            }
-            
-            db.collection('pacientes').add(paciente_data)
-            flash('Paciente registrado correctamente', 'success')
-            return redirect(url_for('pacientes'))
-            
-        except Exception as e:
-            flash(f'Error: {str(e)}', 'error')
-    
-    return render_template('paciente_form.html')
-
-
-@app.route("/pacientes/<paciente_id>/editar", methods=['GET', 'POST'])
-def editar_paciente(paciente_id):
-    """Editar paciente - MINIMALISTA"""
-    if 'user_id' not in session:
-        return redirect(url_for('login'))
-    
-    db = firebase_config.get_db()
-    
-    try:
-        # Obtener datos del paciente
-        doc_ref = db.collection('pacientes').document(paciente_id)
-        doc = doc_ref.get()
-        
-        if not doc.exists:
-            flash('Paciente no encontrado', 'error')
-            return redirect(url_for('pacientes'))
-        
-        paciente = doc.to_dict()
-        paciente['id'] = paciente_id
-        
-        if request.method == 'POST':
-            # Actualizar datos
-            nombre_paciente = request.form['nombre_paciente'].strip()
-            fecha_nacimiento = request.form['fecha_nacimiento'].strip()
-            nombre_apoderado = request.form['nombre_apoderado'].strip()
-            telefono = request.form['telefono'].strip()
-            email = request.form['email'].strip()
-            
-            # Validación 
-            if not all([nombre_paciente, fecha_nacimiento, nombre_apoderado, telefono]):
-                flash('Campos marcados con * son obligatorios', 'error')
-                return render_template('paciente_edit_form.html', paciente=paciente)
-            
-            # Actualizar en Firestore
-            update_data = {
-                'nombre_paciente': nombre_paciente,
-                'fecha_nacimiento': fecha_nacimiento,
-                'nombre_apoderado': nombre_apoderado,
-                'telefono': telefono,
-                'email': email if email else '',
-                'fecha_modificacion': datetime.now().isoformat()
-            }
-            
-            doc_ref.update(update_data)
-            flash('Paciente actualizado correctamente', 'success')
-            return redirect(url_for('pacientes'))
-        
-        return render_template('paciente_edit_form.html', paciente=paciente)
-        
-    except Exception as e:
-        flash(f'Error: {str(e)}', 'error')
-        return redirect(url_for('pacientes'))
-    
-    
-@app.route("/pacientes/<paciente_id>/eliminar", methods=['POST'])
-def eliminar_paciente(paciente_id):
-    """Eliminar paciente - MINIMALISTA"""
-    if 'user_id' not in session:
-        return redirect(url_for('login'))
-    
-    try:
-        db = firebase_config.get_db()
-        doc_ref = db.collection('pacientes').document(paciente_id)
-        
-        # Verificar que existe
-        doc = doc_ref.get()
-        if not doc.exists:
-            flash('Paciente no encontrado', 'error')
-        else:
-            # Eliminar
-            doc_ref.delete()
-            flash('Paciente eliminado correctamente', 'success')
-    
-    except Exception as e:
-        flash(f'Error al eliminar: {str(e)}', 'error')
-    
-    return redirect(url_for('pacientes'))
-
 
 @app.route("/servicios")
 def servicios():
@@ -985,7 +831,7 @@ def inicializar_especialidades():
             {
                 "nombre": "Fonoaudiología Infantil",
                 "descripcion": "Terapia del habla y lenguaje para niños",
-                "codigo": "FONO",
+                "codigo": "FLGA",
                 "estado": "activa"
             },
             {
