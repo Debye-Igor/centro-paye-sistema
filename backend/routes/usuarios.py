@@ -71,8 +71,6 @@ def usuarios():
         flash(f'Error: {str(e)}', 'error')
         return render_template('usuarios.html', usuarios=[])
 
-@usuarios_bp.route("/usuarios/nuevo", methods=['GET', 'POST'])
-@requiere_administrador
 
 @usuarios_bp.route("/usuarios/nuevo", methods=['GET', 'POST'])
 @requiere_administrador
