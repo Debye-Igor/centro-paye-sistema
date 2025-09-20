@@ -11,6 +11,8 @@ from backend.routes.pacientes import pacientes_bp
 from backend.routes.servicios import servicios_bp
 from backend.routes.citas import citas_bp
 from backend.routes.reprogramaciones import reprogramaciones_bp
+from backend.routes.api import api_bp
+
 
 from functools import wraps
 
@@ -27,6 +29,7 @@ app.register_blueprint(pacientes_bp)
 app.register_blueprint(servicios_bp)
 app.register_blueprint(citas_bp)
 app.register_blueprint(reprogramaciones_bp)
+app.register_blueprint(api_bp)
 
 
 # Configuración prroducción
