@@ -134,7 +134,6 @@ def obtener_citas_semana(fecha_inicio, fecha_fin):
                     'observaciones': cita_data.get('observaciones', '')
                 }
                 
-                print(f"DEBUG - Cita: paciente={paciente_nombre}, profesional={profesional_nombre}")
 
             except Exception as e:
                 print(f"Error procesando cita {doc.id}: {e}")
