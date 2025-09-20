@@ -134,6 +134,8 @@ def obtener_citas_semana(fecha_inicio, fecha_fin):
                     'observaciones': cita_data.get('observaciones', '')
                 }
                 
+                print(f"DEBUG - Cita: paciente={paciente_nombre}, profesional={profesional_nombre}")
+
             except Exception as e:
                 print(f"Error procesando cita {doc.id}: {e}")
                 continue
@@ -239,7 +241,7 @@ def nueva_cita():
             fecha_inicio = lunes_semana.strftime('%Y-%m-%d')
             
             # Redirigir a la semana de la cita creada
-            return redirect(url_for('citas.calendario', fecha_inicio=fecha_iniciso))
+            return redirect(url_for('citas.calendario', fecha_inicio=fecha_inicio))
             
         except Exception as e:
             flash(f'Error: {str(e)}', 'error')

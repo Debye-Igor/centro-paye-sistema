@@ -34,9 +34,11 @@
                         {% if citas.get(cita_key) %}
                         <!-- Hay una cita programada -->
                         <div class="cita-programada">
+
                             <strong>{{ citas[cita_key].paciente }}</strong><br>
                             <small>{{ citas[cita_key].servicio }}</small><br>
-                            <small>{{ citas[cita_key].profesional }}</small>
+                            <small><strong>Prof: {{ citas[cita_key].profesional }}</strong></small> <br>
+
                             <div class="cita-acciones">
                                 <button
                                     onclick="reprogramarCita('{{ citas[cita_key].id }}', '{{ citas[cita_key].paciente }}')"

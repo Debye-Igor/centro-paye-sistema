@@ -26,6 +26,39 @@ body {
     padding: 0;
 }
 
+
+/* Menú móvil */
+
+.menu-toggle {
+    display: none;
+    background: var(--accent-color);
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+}
+
+@media (max-width: 768px) {
+    .menu-toggle {
+        display: block;
+    }
+    
+    .nav-menu {
+        display: none;
+    }
+    
+    .nav-menu.mobile-open {
+        display: block;
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: white;
+        flex-direction: column;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+}
+
 /* Layout específico para login */
 body:not(.dashboard-layout) {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);

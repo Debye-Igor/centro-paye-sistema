@@ -20,7 +20,9 @@
     </header>
 
     <nav class="dashboard-nav">
-        <ul>
+    <button class="menu-toggle" onclick="toggleMenu()">☰ Menú</button>
+    <ul class="nav-menu">
+        
             <li><a href="{{ url_for('dashboard') }}" class="nav-link">Dashboard</a></li>
             <li><a href="{{ url_for('citas.calendario') }}" class="nav-link">Calendario</a></li>
             
