@@ -31,12 +31,18 @@ def requiere_administrador(f):
         return f(*args, **kwargs)
     return decorated_function
 
-def generar_semana_actual():
-    """Generar los días de la semana actual (Lunes a Domingo)"""
+def generar_semana_actual(fecha_inicio=None):
+    """Generar los días de una semana específica o actual"""
     dias_espanol = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', "Sab", "Dom"]
     
-    hoy = datetime.now()
-    inicio_semana = hoy - timedelta(days=hoy.weekday())  # Lunes
+    if fecha_inicio:
+        # Usar fecha específica
+        inicio_semana = datetime.strptime(fecha_inicio, '%Y-%m-%d')
+        inicio_semana = inicio_semana - timedelta(days=inicio_semana.weekday())  # Lunes
+    else:
+        # Usar semana actual
+        hoy = datetime.now()
+        inicio_semana = hoy - timedelta(days=hoy.weekday())  # Lunes
     
     dias_semana = []
     for i in range(7):  
@@ -146,14 +152,22 @@ def calendario():
         return redirect(url_for('login'))
     
     try:
-        # Generar dattos del calendario
-        dias = generar_semana_actual()
+        # Obtener fecha desde parámetros URL
+        fecha_inicio = request.args.get('fecha_inicio')
+        
+        # Generar datos del calendario
+        dias = generar_semana_actual(fecha_inicio)
         horarios = generar_horarios()
         
         # Obtener citas
-        fecha_inicio = dias[0]['fecha_str']
-        fecha_fin = dias[-1]['fecha_str']
-        citas = obtener_citas_semana(fecha_inicio, fecha_fin)
+        fecha_inicio_str = dias[0]['fecha_str']
+        fecha_fin_str = dias[-1]['fecha_str']
+        citas = obtener_citas_semana(fecha_inicio_str, fecha_fin_str)
+        
+        # Calcular fechas para navegación
+        lunes_actual = datetime.strptime(dias[0]['fecha_str'], '%Y-%m-%d')
+        semana_anterior = (lunes_actual - timedelta(days=7)).strftime('%Y-%m-%d')
+        semana_siguiente = (lunes_actual + timedelta(days=7)).strftime('%Y-%m-%d')
         
         # Agregar mes en español
         mes_espanol = obtener_mes_espanol(dias[0]['fecha'])
@@ -162,7 +176,9 @@ def calendario():
                              dias=dias, 
                              horarios=horarios, 
                              citas=citas,
-                             mes_espanol=mes_espanol)
+                             mes_espanol=mes_espanol,
+                             semana_anterior=semana_anterior,
+                             semana_siguiente=semana_siguiente)
     
     except Exception as e:
         flash(f'Error: {str(e)}', 'error')
@@ -214,7 +230,16 @@ def nueva_cita():
             
             db.collection('citas').add(cita_data)
             flash('Cita agendada correctamente', 'success')
-            return redirect(url_for('citas.calendario'))
+            
+            # Lógica para que a crear cita se mantenga en el mismo calendarios
+            # Calcular el lunes de la semana de la cita creada
+            
+            fecha_cita = datetime.strptime(fecha, '%Y-%m-%d')
+            lunes_semana = fecha_cita - timedelta(days=fecha_cita.weekday())
+            fecha_inicio = lunes_semana.strftime('%Y-%m-%d')
+            
+            # Redirigir a la semana de la cita creada
+            return redirect(url_for('citas.calendario', fecha_inicio=fecha_iniciso))
             
         except Exception as e:
             flash(f'Error: {str(e)}', 'error')
