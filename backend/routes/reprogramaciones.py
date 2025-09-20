@@ -24,6 +24,7 @@ def requiere_administrador(f):
     return decorated_function
 
 @reprogramaciones_bp.route("/reprogramaciones")
+@requiere_administrador
 
 def reprogramaciones():
     """Ver citas pendientes de reprogramación - Simple"""
@@ -56,7 +57,8 @@ def reprogramaciones():
                     'fecha_original': cita['fecha'],
                     'hora_original': cita['hora'],
                     'servicio': servicio_doc.to_dict()['nombre'] if servicio_doc.exists else 'N/A',
-                    'profesional': profesional_doc.to_dict()['nombre'] if profesional_doc.exists else 'N/A'
+                    'profesional': profesional_doc.to_dict()['nombre'] if profesional_doc.exists else 'N/A',
+                    'motivo': cita.get('motivo_reprogramacion', 'Sin motivo especificado')
                 })
                 
             except Exception as e:
@@ -69,8 +71,8 @@ def reprogramaciones():
         flash(f'Error: {str(e)}', 'error')
         return render_template('reprogramaciones.html', reprogramaciones=[])
 
-@reprogramaciones_bp.route("/reprogramaciones/<cita_id>/nueva-fecha", methods=['GET', 'POST'])
 
+@reprogramaciones_bp.route("/reprogramaciones/<cita_id>/reprogramar", methods=['GET', 'POST'])
 def reprogramar_cita_form(cita_id):
     """Formulario para asignar nueva fecha a cita pendiente de reprogramación"""
     if 'user_id' not in session:
@@ -95,7 +97,7 @@ def reprogramar_cita_form(cita_id):
             return redirect(url_for('reprogramaciones.reprogramaciones'))
         
         if request.method == 'POST':
-            # reprogramación
+            # Procesar reprogramación
             nueva_fecha = request.form['nueva_fecha'].strip()
             nueva_hora = request.form['nueva_hora'].strip()
             profesional_id = request.form['profesional_id'].strip()
@@ -141,8 +143,7 @@ def reprogramar_cita_form(cita_id):
             return redirect(url_for('reprogramaciones.reprogramaciones'))
         
         # Mostrar formulario
-        # Obtener datos para el formluario
-        
+        # Obtener datos para el formulario
         cita_original = obtener_datos_cita_para_form(db, cita_data)
         horarios_disponibles = generar_horarios()
         otros_profesionales = obtener_otros_profesionales(db, cita_data['profesional_id'])

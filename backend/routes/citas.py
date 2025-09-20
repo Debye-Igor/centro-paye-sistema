@@ -270,9 +270,13 @@ def reprogramar_cita(cita_id):
             flash('Cita no encontrada', 'error')
             return redirect(url_for('citas.calendario'))
         
-        # INNOVACIÓN: Cambiar estado para liberar horario
+        # Obtener motivo del formulario
+        motivo = request.form.get('motivo', '').strip()
+        
+        # Cambiar estado para liberar horario y guardars motivo
         cita_ref.update({
             'estado': 'pendiente_reprogramacion',
+            'motivo_reprogramacion': motivo,
             'fecha_reprogramacion': datetime.now().isoformat()
         })
         
@@ -282,7 +286,7 @@ def reprogramar_cita(cita_id):
     except Exception as e:
         flash(f'Error: {str(e)}', 'error')
         return redirect(url_for('citas.calendario'))
-
+    
 @citas_bp.route("/citas/<cita_id>/eliminar", methods=['POST'])
 @requiere_login
 def eliminar_cita(cita_id):

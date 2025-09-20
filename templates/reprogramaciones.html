@@ -12,7 +12,7 @@
 
     {% if reprogramaciones %}
         <div style="background: #e3f2fd; padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
-            <p><strong>💡 Innovación:</strong> Detalle de citas pendientes a reprogramar.</p>
+            <p>💡Detalle de citas pendientes a reprogramar.</p>
         </div>
     {% endif %}
 
@@ -24,6 +24,7 @@
                 <th>Hora Original</th>
                 <th>Servicio</th>
                 <th>Profesional</th>
+                <th>Motivo</th>
                 <th>Acciones</th>
             </tr>
         </thead>
@@ -35,13 +36,14 @@
                 <td>{{ reprog.hora_original }}</td>
                 <td>{{ reprog.servicio }}</td>
                 <td>{{ reprog.profesional }}</td>
+                <td>{{ reprog.motivo }}</td>
                 <td>
                     <a href="{{ url_for('reprogramaciones.reprogramar_cita_form', cita_id=reprog.id) }}" class="btn-primary">Asignar Nueva Fecha</a>
                 </td>
             </tr>
             {% else %}
             <tr>
-                <td colspan="6" class="no-data">
+                <td colspan="7" class="no-data">
                     🎉 ¡Excelente! No hay citas pendientes de reprogramación
                 </td>
             </tr>

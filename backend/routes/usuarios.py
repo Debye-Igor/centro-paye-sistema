@@ -8,7 +8,7 @@ import os
 from functools import wraps
 
 
-# Crear Blueprint
+# Blueprint
 usuarios_bp = Blueprint('usuarios', __name__)
 
 def requiere_administrador(f):
@@ -18,7 +18,7 @@ def requiere_administrador(f):
         if 'user_id' not in session:
             return redirect(url_for('login'))
         
-        # Importar función de app.py
+        # función de app.py
         from app import obtener_rol_usuario
         if obtener_rol_usuario() != 'administrador':
             flash('No tienes permisos para esta acción', 'error')
@@ -79,7 +79,7 @@ def nuevo_usuario():
     if 'user_id' not in session:
         return redirect(url_for('login'))
     
-    # Cargar especialidades SIEMPRE (para usar en errores también)
+    # Cargar especialidades
     try:
         db = firebase_config.get_db()
         especialidades = []
@@ -97,12 +97,12 @@ def nuevo_usuario():
         rol = request.form['rol'].strip()
         especialidad_id = request.form.get('especialidad_id', '').strip()
         
-        # Validación - AHORA CON especialidades
+        # Validación
         if not all([nombre, email, password, rol]):
             flash('Todos los campos son obligatorios', 'error')
             return render_template('usuario_form.html', especialidades=especialidades)
         
-        # Si es profesional, especialidad es obligatoria - AHORA CON especialidades
+        # Si es profesional, especialidad es obligatoria
         if rol == 'profesional' and not especialidad_id:
             flash('Especialidad es obligatoria para profesionales', 'error')
             return render_template('usuario_form.html', especialidades=especialidades)

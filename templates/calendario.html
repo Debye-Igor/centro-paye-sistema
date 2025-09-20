@@ -64,11 +64,20 @@ function nuevaCita(fecha, hora) {
 
 
 function reprogramarCita(citaId, paciente) {
-    if (confirm(`¿Marcar la cita de "${paciente}" como pendiente de reprogramación?\n\nEsto liberará automáticamente el horario.`)) {
-        // Enviar solicitud para cambiar estado
+    const motivo = prompt(`¿Motivo para reprogramar la cita de "${paciente}"?`, '');
+    
+    if (motivo && motivo.trim() !== '') {
+        // Formulario con el motivo
         const form = document.createElement('form');
         form.method = 'POST';
         form.action = `/citas/${citaId}/reprogramar`;
+        
+        // Agregar campo motivo
+        const motivoInput = document.createElement('input');
+        motivoInput.type = 'hidden';
+        motivoInput.name = 'motivo';
+        motivoInput.value = motivo.trim();
+        form.appendChild(motivoInput);
         
         document.body.appendChild(form);
         form.submit();
