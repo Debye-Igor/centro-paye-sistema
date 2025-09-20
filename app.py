@@ -50,7 +50,7 @@ def obtener_rol_usuario():
             usuario_data = doc.to_dict()
             return usuario_data.get('rol', 'profesional')  # Default profesional
         
-        return 'profesional'  # Si no encuentra, default profesional
+        return 'profesional' 
     except:
         return 'profesional'
     

@@ -38,7 +38,7 @@ def requiere_login(f):
     return decorated_function
 
 @usuarios_bp.route("/usuarios")
-@requiere_login
+@requiere_administrador
 
 def usuarios():
     """Listar usuarios del sistema"""
@@ -72,11 +72,25 @@ def usuarios():
         return render_template('usuarios.html', usuarios=[])
 
 @usuarios_bp.route("/usuarios/nuevo", methods=['GET', 'POST'])
-@requiere_login
+@requiere_administrador
+
+@usuarios_bp.route("/usuarios/nuevo", methods=['GET', 'POST'])
+@requiere_administrador
 def nuevo_usuario():
     """Crear nuevo usuario del sistema"""
     if 'user_id' not in session:
         return redirect(url_for('login'))
+    
+    # Cargar especialidades SIEMPRE (para usar en errores también)
+    try:
+        db = firebase_config.get_db()
+        especialidades = []
+        for doc in db.collection('especialidades').where('estado', '==', 'activa').stream():
+            esp_data = doc.to_dict()
+            esp_data['id'] = doc.id
+            especialidades.append(esp_data)
+    except:
+        especialidades = []
     
     if request.method == 'POST':
         nombre = request.form['nombre'].strip()
@@ -85,15 +99,15 @@ def nuevo_usuario():
         rol = request.form['rol'].strip()
         especialidad_id = request.form.get('especialidad_id', '').strip()
         
-        # Validación
+        # Validación - AHORA CON especialidades
         if not all([nombre, email, password, rol]):
             flash('Todos los campos son obligatorios', 'error')
-            return render_template('usuario_form.html')
+            return render_template('usuario_form.html', especialidades=especialidades)
         
-        # Si es profesional, especialidad es obligatoria
+        # Si es profesional, especialidad es obligatoria - AHORA CON especialidades
         if rol == 'profesional' and not especialidad_id:
             flash('Especialidad es obligatoria para profesionales', 'error')
-            return render_template('usuario_form.html')
+            return render_template('usuario_form.html', especialidades=especialidades)
         
         try:
             # Crear en Firebase Auth
@@ -128,21 +142,12 @@ def nuevo_usuario():
                 flash('Usuario creado correctamente', 'success')
                 return redirect(url_for('usuarios.usuarios'))
             else:
-                flash('Error creando usuario', 'error')
+                flash('Error creando usuario en Firebase', 'error')
+                return render_template('usuario_form.html', especialidades=especialidades)
                 
         except Exception as e:
             flash(f'Error: {str(e)}', 'error')
+            return render_template('usuario_form.html', especialidades=especialidades)
     
-    # Obtener especialidades para el dropdown
-    try:
-        db = firebase_config.get_db()
-        especialidades = []
-        for doc in db.collection('especialidades').where('estado', '==', 'activa').stream():
-            esp_data = doc.to_dict()
-            esp_data['id'] = doc.id
-            especialidades.append(esp_data)
-        
-        return render_template('usuario_form.html', especialidades=especialidades)
-    except:
-        return render_template('usuario_form.html', especialidades=[])
-    
+    # GET: Mostrar formulario
+    return render_template('usuario_form.html', especialidades=especialidades)

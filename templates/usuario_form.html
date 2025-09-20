@@ -6,7 +6,7 @@
 {% block content %}
 <div class="content">
     <h2>Crear Usuario del Sistema</h2> <br>
-    
+
     <form method="POST">
         <div class="form-group">
             <label for="nombre">Nombre *</label>
@@ -32,9 +32,37 @@
             </select>
         </div>
 
-        <button type="submit" class="btn-primary">Crear</button>
-        <a href="{{ url_for('usuarios.usuarios') }}" class="btn-secondary">Cancelar</a>
+        <div class="form-group" id="especialidad-group" style="display: none;">
+            <label for="especialidad_id">Especialidad *</label>
+            <select id="especialidad_id" name="especialidad_id">
+                <option value="">Seleccionar especialidad</option>
+                {% for especialidad in especialidades %}
+                <option value="{{ especialidad.id }}">{{ especialidad.codigo }} - {{ especialidad.nombre }}</option>
+                {% endfor %}
+            </select>
+
+            <button type="submit" class="btn-primary">Crear</button>
+            <a href="{{ url_for('usuarios.usuarios') }}" class="btn-secondary">Cancelar</a>
 
     </form>
 </div>
+
+
+<script>
+function mostrarEspecialidades() {
+    const rol = document.getElementById('rol').value;
+    const especialidadGroup = document.getElementById('especialidad-group');
+    const especialidadSelect = document.getElementById('especialidad_id');
+    
+    if (rol === 'profesional') {
+        especialidadGroup.style.display = 'block';
+        especialidadSelect.required = true;
+    } else {
+        especialidadGroup.style.display = 'none';
+        especialidadSelect.required = false;
+        especialidadSelect.value = ''; // Limpiar selección
+    }
+}
+</script>
+
 {% endblock %}
