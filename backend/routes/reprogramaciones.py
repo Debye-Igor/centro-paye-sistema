@@ -3,8 +3,7 @@ from backend.config.firebase_config import firebase_config
 from datetime import datetime, timedelta
 from functools import wraps
 
-
-# Bllueprint
+# Blueprint
 reprogramaciones_bp = Blueprint('reprogramaciones', __name__)
 
 def requiere_administrador(f):
@@ -25,9 +24,8 @@ def requiere_administrador(f):
 
 @reprogramaciones_bp.route("/reprogramaciones")
 @requiere_administrador
-
 def reprogramaciones():
-    """Ver citas pendientes de reprogramación - Simple"""
+    """Ver citas pendientes de reprogramación"""
     if 'user_id' not in session:
         return redirect(url_for('login'))
     
@@ -62,7 +60,6 @@ def reprogramaciones():
                 })
                 
             except Exception as e:
-                print(f"Error procesando: {e}")
                 continue
         
         return render_template('reprogramaciones.html', reprogramaciones=reprogramaciones)
@@ -71,8 +68,8 @@ def reprogramaciones():
         flash(f'Error: {str(e)}', 'error')
         return render_template('reprogramaciones.html', reprogramaciones=[])
 
-
 @reprogramaciones_bp.route("/reprogramaciones/<cita_id>/reprogramar", methods=['GET', 'POST'])
+@requiere_administrador
 def reprogramar_cita_form(cita_id):
     """Formulario para asignar nueva fecha a cita pendiente de reprogramación"""
     if 'user_id' not in session:
@@ -97,7 +94,7 @@ def reprogramar_cita_form(cita_id):
             return redirect(url_for('reprogramaciones.reprogramaciones'))
         
         if request.method == 'POST':
-            # Procesar reprogramación
+            # rreprogramación
             nueva_fecha = request.form['nueva_fecha'].strip()
             nueva_hora = request.form['nueva_hora'].strip()
             profesional_id = request.form['profesional_id'].strip()
@@ -148,7 +145,7 @@ def reprogramar_cita_form(cita_id):
         horarios_disponibles = generar_horarios()
         otros_profesionales = obtener_otros_profesionales(db, cita_data['profesional_id'])
         
-        # Fecha mínima (hoy) y sugerida (mañana)
+        # Fecha mínima hoy y sugerida mañana
         fecha_minima = datetime.now().strftime('%Y-%m-%d')
         fecha_sugerida = (datetime.now() + timedelta(days=1)).strftime('%Y-%m-%d')
         
@@ -241,5 +238,4 @@ def generar_horarios():
         return horarios
         
     except Exception as e:
-        print(f"Error obteniendo configuración: {e}")
         return ["09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00"]

@@ -130,7 +130,7 @@ def editar_paciente(paciente_id):
             telefono = request.form['telefono'].strip()
             email = request.form['email'].strip()
             
-            if not all([nombre_paciente, fecha_nacimiento, nombre_apoderado, telefono]):
+            if not all([nombre_paciente, fecha_nacimiento, nombre_apoderado]):
                 flash('Campos marcados con * son obligatorios', 'error')
                 return render_template('paciente_edit_form.html', paciente=paciente)
             
