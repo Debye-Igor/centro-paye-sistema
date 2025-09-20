@@ -110,3 +110,8 @@ def api_get_servicios():
         return jsonify({"servicios": servicios, "status": "success"})
     except Exception as e:
         return jsonify({"error": str(e), "status": "error"}), 400
+    
+    
+    
+    
+    

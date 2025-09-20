@@ -388,6 +388,10 @@ body:not(.dashboard-layout) {
 }
 
 /* MÓVILES */
+
+.container {
+    width: 100%;
+}
 @media (max-width: 768px) {
     /* Menú */
     .menu-toggle {
