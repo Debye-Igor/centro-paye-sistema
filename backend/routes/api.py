@@ -59,8 +59,8 @@ def api_create_cita():
             'fecha_creacion': datetime.now().isoformat()
         }
         
-        doc_ref = db.collection('citas').add(cita_data)
-        cita_data['id'] = doc_ref[1].id
+        timestamp, doc_ref = db.collection('citas').add(cita_data)
+        cita_data['id'] = doc_ref.id
         
         return jsonify({"cita": cita_data, "status": "success"}), 201
     except Exception as e:
@@ -68,7 +68,7 @@ def api_create_cita():
 
 @api_bp.route("/api/citas/<cita_id>/reprogramar", methods=['PUT'])
 def api_reprogramar_cita(cita_id):
-    """API: Funcionalidad innovadora - Reprogramar cita"""
+    """API:  Reprogramar cita"""
     try:
         data = request.get_json()
         motivo = data.get('motivo', 'Sin motivo especificado')
@@ -90,5 +90,23 @@ def api_reprogramar_cita(cita_id):
             "message": "Cita marcada para reprogramar. Horario liberado.", 
             "status": "success"
         })
+    except Exception as e:
+        return jsonify({"error": str(e), "status": "error"}), 400
+    
+    
+    
+@api_bp.route("/api/servicios", methods=['GET'])
+def api_get_servicios():
+    """API: Obtener servicios activos"""
+    try:
+        db = firebase_config.get_db()
+        servicios = []
+        
+        for doc in db.collection('servicios').where('estado', '==', 'activo').stream():
+            servicio_data = doc.to_dict()
+            servicio_data['id'] = doc.id
+            servicios.append(servicio_data)
+        
+        return jsonify({"servicios": servicios, "status": "success"})
     except Exception as e:
         return jsonify({"error": str(e), "status": "error"}), 400
