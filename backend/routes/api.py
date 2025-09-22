@@ -113,5 +113,23 @@ def api_get_servicios():
     
     
     
-    
-    
+
+@api_bp.route("/api/horarios-fecha", methods=['POST'])
+def api_horarios_fecha():
+    """API: Obtener horarios disponibles para una fecha específica"""
+    try:
+        data = request.get_json()
+        fecha = data.get('fecha')
+        
+        if not fecha:
+            return jsonify({"error": "Fecha requerida", "status": "error"}), 400
+        
+        db = firebase_config.get_db()
+        
+        # Usar función existente para obtener horarios disponibles
+        from backend.routes.reprogramaciones import obtener_horarios_disponibles
+        horarios = obtener_horarios_disponibles(db, fecha)
+        
+        return jsonify({"horarios": horarios, "status": "success"})
+    except Exception as e:
+        return jsonify({"error": str(e), "status": "error"}), 400

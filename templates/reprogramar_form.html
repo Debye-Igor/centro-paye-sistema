@@ -57,6 +57,49 @@
     </form>
 </div>
 
+<script>
+document.getElementById('nueva_fecha').addEventListener('change', function() {
+    const fecha = this.value;
+    const selectHora = document.getElementById('nueva_hora');
+    
+    if (!fecha) {
+        selectHora.innerHTML = '<option value="">Seleccionar hora</option>';
+        return;
+    }
+    
+    // Mostrar loading en camo de horas
+    selectHora.innerHTML = '<option value="">Cargando horarios...</option>';
+    
+    // peticion para obtener horarios de esta fecha
+    fetch('/api/horarios-fecha', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ fecha: fecha })
+    })
+    .then(response => response.json())
+    .then(data => {
+        selectHora.innerHTML = '<option value="">Seleccionar hora</option>';
+        
+        if (data.horarios && data.horarios.length > 0) {
+            data.horarios.forEach(hora => {
+                const option = document.createElement('option');
+                option.value = hora;
+                option.textContent = hora;
+                selectHora.appendChild(option);
+            });
+        } else {
+            selectHora.innerHTML = '<option value="">No hay horarios disponibles</option>';
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        selectHora.innerHTML = '<option value="">Error cargando horarios</option>';
+    });
+});
+</script>
+
 <style>
 .info-original {
     background: #e3f2fd;
