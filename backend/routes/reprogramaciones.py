@@ -68,99 +68,6 @@ def reprogramaciones():
         flash(f'Error: {str(e)}', 'error')
         return render_template('reprogramaciones.html', reprogramaciones=[])
 
-@reprogramaciones_bp.route("/reprogramaciones/<cita_id>/reprogramar", methods=['GET', 'POST'])
-@requiere_administrador
-def reprogramar_cita_form(cita_id):
-    """Formulario para asignar nueva fecha a cita pendiente de reprogramación"""
-    if 'user_id' not in session:
-        return redirect(url_for('login'))
-    
-    db = firebase_config.get_db()
-    
-    try:
-        # Obtener la cita pendiente de reprogramación
-        cita_ref = db.collection('citas').document(cita_id)
-        cita_doc = cita_ref.get()
-        
-        if not cita_doc.exists:
-            flash('Cita no encontrada', 'error')
-            return redirect(url_for('reprogramaciones.reprogramaciones'))
-        
-        cita_data = cita_doc.to_dict()
-        
-        # Verificar que esté en estado pendiente_reprogramacion
-        if cita_data.get('estado') != 'pendiente_reprogramacion':
-            flash('Esta cita no está pendiente de reprogramación', 'error')
-            return redirect(url_for('reprogramaciones.reprogramaciones'))
-        
-        if request.method == 'POST':
-            # rreprogramación
-            nueva_fecha = request.form['nueva_fecha'].strip()
-            nueva_hora = request.form['nueva_hora'].strip()
-            profesional_id = request.form['profesional_id'].strip()
-            observaciones = request.form['observaciones'].strip()
-            
-            # Validaciones
-            if not all([nueva_fecha, nueva_hora, profesional_id]):
-                flash('Todos los campos marcados con * son obligatorios', 'error')
-                return redirect(request.url)
-            
-            # Verificar que no haya conflicto de horario
-            conflicto = verificar_conflicto_horario(db, nueva_fecha, nueva_hora, profesional_id)
-            if conflicto:
-                flash('Ya existe una cita en ese horario para el profesional seleccionado', 'error')
-                return redirect(request.url)
-            
-            # Crear la nueva cita
-            nueva_cita_data = {
-                'fecha': nueva_fecha,
-                'hora': nueva_hora,
-                'paciente_id': cita_data['paciente_id'],
-                'servicio_id': cita_data['servicio_id'],
-                'profesional_id': profesional_id,
-                'estado': 'programada',
-                'observaciones': f"Reprogramada desde {cita_data['fecha']} {cita_data['hora']}. {observaciones}",
-                'cita_original_id': cita_id,
-                'fecha_creacion': datetime.now().isoformat(),
-                'reprogramado_por': session.get('user_id')
-            }
-            
-            # Guardar nueva cita
-            db.collection('citas').add(nueva_cita_data)
-            
-            # Actualizar cita original a estado "reprogramada"
-            cita_ref.update({
-                'estado': 'reprogramada',
-                'fecha_reprogramacion_final': datetime.now().isoformat(),
-                'nueva_fecha': nueva_fecha,
-                'nueva_hora': nueva_hora
-            })
-            
-            flash('Cita reprogramada exitosamente', 'success')
-            return redirect(url_for('reprogramaciones.reprogramaciones'))
-        
-        # Mostrar formulario
-        # Obtener datos para el formulario
-        cita_original = obtener_datos_cita_para_form(db, cita_data)
-        
-        #
-        horarios_disponibles = obtener_horarios_disponibles(db, fecha_sugerida, cita_data['profesional_id'])
-        otros_profesionales = obtener_otros_profesionales(db, cita_data['profesional_id'])
-        
-        # Fecha mínima hoy y sugerida mañana
-        fecha_minima = datetime.now().strftime('%Y-%m-%d')
-        fecha_sugerida = (datetime.now() + timedelta(days=1)).strftime('%Y-%m-%d')
-        
-        return render_template('reprogramar_form.html',
-                             cita_original=cita_original,
-                             horarios_disponibles=horarios_disponibles,
-                             otros_profesionales=otros_profesionales,
-                             fecha_minima=fecha_minima,
-                             fecha_sugerida=fecha_sugerida)
-    
-    except Exception as e:
-        flash(f'Error: {str(e)}', 'error')
-        return redirect(url_for('reprogramaciones.reprogramaciones'))
 
 def verificar_conflicto_horario(db, fecha, hora, profesional_id):
     """Verifica si ya existe una cita en el horario especificado"""
@@ -262,11 +169,132 @@ def obtener_horarios_disponibles(db, fecha, profesional_id):
             cita_data = cita.to_dict()
             horarios_ocupados.add(cita_data['hora'])
         
-        # Filltrar horarios disponibles
+        # Filtrar horarios disponibles
         horarios_disponibles = [hora for hora in todos_horarios if hora not in horarios_ocupados]
         
         return horarios_disponibles
         
     except Exception as e:
         print(f"Error obteniendo horarios disponibles: {e}")
-        return generar_horarios()
+        return generar_horarios()  # Fallback a todos los horarios
+
+
+@reprogramaciones_bp.route("/reprogramaciones/<cita_id>/reprogramar", methods=['GET', 'POST'])
+@requiere_administrador
+def reprogramar_cita_form(cita_id):
+    """Formulario para asignar nueva fecha a cita pendiente de reprogramación"""
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    db = firebase_config.get_db()
+    
+    try:
+        # Obtener la cita pendiente de reprogramación
+        cita_ref = db.collection('citas').document(cita_id)
+        cita_doc = cita_ref.get()
+        
+        if not cita_doc.exists:
+            flash('Cita no encontrada', 'error')
+            return redirect(url_for('reprogramaciones.reprogramaciones'))
+        
+        cita_data = cita_doc.to_dict()
+        cita_data['id'] = cita_id  # Agregar ID para trazabilidad
+        
+        # Verificar que esté en estado pendiente_reprogramacion
+        if cita_data.get('estado') != 'pendiente_reprogramacion':
+            flash('Esta cita no está pendiente de reprogramación', 'error')
+            return redirect(url_for('reprogramaciones.reprogramaciones'))
+        
+        if request.method == 'POST':
+            # Procesar reprogramación
+            nueva_fecha = request.form['nueva_fecha'].strip()
+            nueva_hora = request.form['nueva_hora'].strip()
+            profesional_id = request.form['profesional_id'].strip()
+            observaciones = request.form['observaciones'].strip()
+            
+            # Validaciones
+            if not all([nueva_fecha, nueva_hora, profesional_id]):
+                flash('Todos los campos marcados con * son obligatorios', 'error')
+                
+                # Recargar datos para mostrar formulario con error
+                cita_original = obtener_datos_cita_para_form(db, cita_data)
+                fecha_sugerida = nueva_fecha if nueva_fecha else (datetime.now() + timedelta(days=1)).strftime('%Y-%m-%d')
+                horarios_disponibles = obtener_horarios_disponibles(db, fecha_sugerida, cita_data['profesional_id'])
+                otros_profesionales = obtener_otros_profesionales(db, cita_data['profesional_id'])
+                fecha_minima = datetime.now().strftime('%Y-%m-%d')
+                
+                return render_template('reprogramar_form.html',
+                                     cita_original=cita_original,
+                                     horarios_disponibles=horarios_disponibles,
+                                     otros_profesionales=otros_profesionales,
+                                     fecha_minima=fecha_minima,
+                                     fecha_sugerida=fecha_sugerida)
+            
+            # Verificar que no haya conflicto de horario
+            conflicto = verificar_conflicto_horario(db, nueva_fecha, nueva_hora, profesional_id)
+            if conflicto:
+                flash('Ya existe una cita en ese horario para el profesional seleccionado', 'error')
+                
+                # Recargar datos para mostrar formulario con error
+                cita_original = obtener_datos_cita_para_form(db, cita_data)
+                horarios_disponibles = obtener_horarios_disponibles(db, nueva_fecha, profesional_id)
+                otros_profesionales = obtener_otros_profesionales(db, cita_data['profesional_id'])
+                fecha_minima = datetime.now().strftime('%Y-%m-%d')
+                
+                return render_template('reprogramar_form.html',
+                                     cita_original=cita_original,
+                                     horarios_disponibles=horarios_disponibles,
+                                     otros_profesionales=otros_profesionales,
+                                     fecha_minima=fecha_minima,
+                                     fecha_sugerida=nueva_fecha)
+            
+            # Crear la nueva cita
+            nueva_cita_data = {
+                'fecha': nueva_fecha,
+                'hora': nueva_hora,
+                'paciente_id': cita_data['paciente_id'],
+                'servicio_id': cita_data['servicio_id'],
+                'profesional_id': profesional_id,
+                'estado': 'programada',
+                'observaciones': f"Reprogramada desde {cita_data['fecha']} {cita_data['hora']}. {observaciones}",
+                'cita_original_id': cita_id,
+                'fecha_creacion': datetime.now().isoformat(),
+                'reprogramado_por': session.get('user_id')
+            }
+            
+            # Guardar nueva cita
+            db.collection('citas').add(nueva_cita_data)
+            
+            # Actualizar cita original a estado "reprogramada"
+            cita_ref.update({
+                'estado': 'reprogramada',
+                'fecha_reprogramacion_final': datetime.now().isoformat(),
+                'nueva_fecha': nueva_fecha,
+                'nueva_hora': nueva_hora
+            })
+            
+            flash('Cita reprogramada exitosamente', 'success')
+            return redirect(url_for('reprogramaciones.reprogramaciones'))
+        
+        # GET: Mostrar formulario
+        # Obtener datos para el formulario
+        cita_original = obtener_datos_cita_para_form(db, cita_data)
+        otros_profesionales = obtener_otros_profesionales(db, cita_data['profesional_id'])
+        
+        # Fecha mínima hoy y sugerida mañana
+        fecha_minima = datetime.now().strftime('%Y-%m-%d')
+        fecha_sugerida = (datetime.now() + timedelta(days=1)).strftime('%Y-%m-%d')
+        
+        # Obtener horarios disponibles para la fecha sugerida y profesional original
+        horarios_disponibles = obtener_horarios_disponibles(db, fecha_sugerida, cita_data['profesional_id'])
+        
+        return render_template('reprogramar_form.html',
+                             cita_original=cita_original,
+                             horarios_disponibles=horarios_disponibles,
+                             otros_profesionales=otros_profesionales,
+                             fecha_minima=fecha_minima,
+                             fecha_sugerida=fecha_sugerida)
+    
+    except Exception as e:
+        flash(f'Error: {str(e)}', 'error')
+        return redirect(url_for('reprogramaciones.reprogramaciones'))
