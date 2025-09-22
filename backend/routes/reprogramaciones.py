@@ -142,7 +142,9 @@ def reprogramar_cita_form(cita_id):
         # Mostrar formulario
         # Obtener datos para el formulario
         cita_original = obtener_datos_cita_para_form(db, cita_data)
-        horarios_disponibles = generar_horarios()
+        
+        #
+        horarios_disponibles = obtener_horarios_disponibles(db, fecha_sugerida, cita_data['profesional_id'])
         otros_profesionales = obtener_otros_profesionales(db, cita_data['profesional_id'])
         
         # Fecha mínima hoy y sugerida mañana
@@ -239,3 +241,32 @@ def generar_horarios():
         
     except Exception as e:
         return ["09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00"]
+    
+    
+def obtener_horarios_disponibles(db, fecha, profesional_id):
+    """Obtiene horarios disponibles para una fecha y profesional específicos"""
+    try:
+        # Generar todos los horarios posibles
+        todos_horarios = generar_horarios()
+        
+        # Consultar citas existentes para esa fecha y profesional
+        citas_ocupadas = db.collection('citas')\
+                          .where('fecha', '==', fecha)\
+                          .where('profesional_id', '==', profesional_id)\
+                          .where('estado', '==', 'programada')\
+                          .stream()
+        
+        # Extraer horarios ocupados
+        horarios_ocupados = set()
+        for cita in citas_ocupadas:
+            cita_data = cita.to_dict()
+            horarios_ocupados.add(cita_data['hora'])
+        
+        # Filltrar horarios disponibles
+        horarios_disponibles = [hora for hora in todos_horarios if hora not in horarios_ocupados]
+        
+        return horarios_disponibles
+        
+    except Exception as e:
+        print(f"Error obteniendo horarios disponibles: {e}")
+        return generar_horarios()
